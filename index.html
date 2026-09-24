@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Studio Robson</title>
+<meta name="description" content="Persoonlijke kracht- en hypertrofie-tracker">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Studio Robson">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f0f0f;
+  --bg2:#1a1a1a;
+  --bg3:#242424;
+  --bg4:#2e2e2e;
+  --border:#333;
+  --text:#f0f0f0;
+  --text2:#888;
+  --text3:#555;
+  --accent:#c8f240;
+  --accent2:#a8d420;
+  --red:#ff5252;
+  --blue:#4da6ff;
+  --orange:#ff9a3c;
+  --purple:#b46ef5;
+  --r:12px;
+  --r2:8px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px}
+.app{display:flex;flex-direction:column;height:100vh;height:100svh;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
+
+/* NAV */
+.nav{display:flex;background:var(--bg2);border-top:1px solid var(--border);padding:8px 4px calc(10px + env(safe-area-inset-bottom));gap:2px;flex-shrink:0;position:relative;z-index:10}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border:none;background:none;color:var(--text3);cursor:pointer;border-radius:var(--r2);transition:all .2s;font-family:'DM Sans',sans-serif}
+.nav-btn.active{color:var(--accent)}
+.nav-btn svg{width:22px;height:22px;transition:transform .2s}
+.nav-btn.active svg{transform:scale(1.1)}
+.nav-label{font-size:10px;font-weight:500;letter-spacing:.3px}
+
+/* PAGES */
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:16px;display:none;flex-direction:column;gap:14px}
+.page.active{display:flex}
+.page::-webkit-scrollbar{width:0}
+
+/* HEADER */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.page-title{font-size:22px;font-weight:600;letter-spacing:-.5px}
+.page-sub{font-size:13px;color:var(--text2);margin-top:2px}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.card-sm{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+
+/* SECTION LABEL */
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px}
+
+/* PROGRESS BAR */
+.pbar-wrap{background:var(--bg4);border-radius:999px;height:4px;overflow:hidden}
+.pbar{height:4px;border-radius:999px;background:var(--accent);transition:width .4s ease}
+
+/* PILL BADGE */
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;letter-spacing:.2px}
+.badge-green{background:rgba(200,242,64,.12);color:var(--accent)}
+.badge-blue{background:rgba(77,166,255,.12);color:var(--blue)}
+.badge-orange{background:rgba(255,154,60,.12);color:var(--orange)}
+.badge-purple{background:rgba(180,110,245,.12);color:var(--purple)}
+.badge-gray{background:var(--bg3);color:var(--text2)}
+
+/* TOGGLE CHECK */
+.check-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:opacity .2s}
+.check-item:last-child{border-bottom:none;padding-bottom:0}
+.check-item.done{opacity:.4}
+.check-item.done .ci-name{text-decoration:line-through}
+.check-box{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.check-item.done .check-box{background:var(--accent);border-color:var(--accent)}
+.check-tick{display:none;width:10px;height:10px}
+.check-item.done .check-tick{display:block}
+.ci-name{font-size:13px;color:var(--text);flex:1}
+.ci-qty{font-size:12px;color:var(--text3);white-space:nowrap}
+
+/* HOME STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-card{background:var(--bg3);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:4px}
+.stat-val{font-size:24px;font-weight:600;letter-spacing:-.5px}
+.stat-lbl{font-size:11px;color:var(--text2);font-weight:500}
+.stat-card.accent{background:var(--accent);border:none}
+.stat-card.accent .stat-val,.stat-card.accent .stat-lbl{color:#0f0f0f}
+
+/* TRAINING */
+.day-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.day-header{display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer}
+.day-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .2s}
+.day-dot.active{background:var(--accent)}
+.day-info{flex:1}
+.day-name{font-size:14px;font-weight:600}
+.day-type{font-size:12px;color:var(--text2);margin-top:1px}
+.day-chevron{color:var(--text3);transition:transform .3s;font-size:18px}
+.day-card.open .day-chevron{transform:rotate(90deg)}
+.day-body{display:none;padding:0 16px 14px;border-top:1px solid var(--border)}
+.day-card.open .day-body{display:block}
+.ex-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.ex-row:last-child{border-bottom:none;padding-bottom:0}
+.ex-num{width:24px;height:24px;border-radius:6px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--text2);flex-shrink:0}
+.ex-name{font-size:13px;flex:1}
+.ex-sets{font-size:12px;color:var(--text3)}
+.tip-row{margin-top:10px;background:rgba(200,242,64,.06);border:1px solid rgba(200,242,64,.15);border-radius:var(--r2);padding:8px 12px;font-size:12px;color:var(--accent);line-height:1.5}
+
+/* MEAL */
+.meal-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.meal-head{display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer}
+.meal-icon{width:32px;height:32px;border-radius:var(--r2);background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.meal-info{flex:1}
+.meal-title{font-size:14px;font-weight:600}
+.meal-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.meal-body{display:none;padding:0 16px 14px;border-top:1px solid var(--border)}
+.meal-card.open .meal-body{display:block}
+.meal-card.open .day-chevron{transform:rotate(90deg)}
+.ing-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px}
+.ing-row:last-child{border-bottom:none;padding-bottom:0}
+.ing-amt{font-size:12px;color:var(--text3)}
+.step-row{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;line-height:1.5}
+.step-row:last-child{border-bottom:none;padding-bottom:0}
+.step-num{min-width:20px;font-size:11px;font-weight:600;color:var(--accent);margin-top:2px}
+
+/* PROFILE */
+.input-group{display:flex;flex-direction:column;gap:6px}
+.input-label{font-size:12px;color:var(--text2);font-weight:500}
+.input-field{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;width:100%;outline:none;transition:border-color .2s}
+.input-field:focus{border-color:var(--accent)}
+.btn-primary{background:var(--accent);color:#0f0f0f;border:none;border-radius:var(--r2);padding:12px 20px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%;letter-spacing:.3px;transition:background .2s}
+.btn-primary:active{background:var(--accent2)}
+.bmi-card{background:var(--bg3);border-radius:var(--r);padding:16px;display:flex;align-items:center;gap:16px}
+.bmi-circle{width:64px;height:64px;border-radius:50%;border:2px solid var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.bmi-val{font-size:18px;font-weight:600;color:var(--accent)}
+.bmi-lbl{font-size:9px;color:var(--text2);letter-spacing:.3px}
+.bmi-info{flex:1}
+.bmi-cat{font-size:14px;font-weight:600}
+.bmi-sub{font-size:12px;color:var(--text2);margin-top:2px}
+
+/* WEIGHT LOG */
+.weight-list{display:flex;flex-direction:column;gap:8px}
+.weight-entry{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border-radius:var(--r2);padding:10px 14px}
+.w-date{font-size:12px;color:var(--text2)}
+.w-val{font-size:16px;font-weight:600;font-family:'DM Mono',monospace}
+.w-diff{font-size:12px;font-weight:500;padding:2px 8px;border-radius:999px}
+.w-diff.up{background:rgba(255,82,82,.12);color:var(--red)}
+.w-diff.down{background:rgba(200,242,64,.12);color:var(--accent)}
+.w-diff.same{background:var(--bg4);color:var(--text3)}
+.del-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:2px 6px;line-height:1}
+.del-btn:hover{color:var(--red)}
+
+/* GROCERY */
+.grocery-reset{background:none;border:none;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;text-decoration:underline;padding:0}
+.grocery-reset:hover{color:var(--text2)}
+
+/* RING */
+.ring-container{display:flex;align-items:center;gap:16px}
+.ring-svg{flex-shrink:0}
+.ring-info{flex:1}
+.ring-label{font-size:12px;color:var(--text2);margin-top:2px}
+
+/* TABS */
+.tabs{display:flex;gap:6px;background:var(--bg3);border-radius:var(--r2);padding:4px}
+.tab{flex:1;padding:8px;border:none;background:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border-radius:6px;transition:all .2s}
+.tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tab-content{display:none}
+.tab-content.active{display:flex;flex-direction:column;gap:12px}
+
+/* TODAY BADGE */
+.today-tag{font-size:10px;font-weight:700;background:var(--accent);color:#0f0f0f;padding:2px 7px;border-radius:999px;letter-spacing:.3px}
+
+.empty-state{text-align:center;padding:32px 16px;color:var(--text3);font-size:13px}
+.empty-state svg{margin:0 auto 12px;display:block;opacity:.3}
+
+.row-between{display:flex;align-items:center;justify-content:space-between}
+.macro-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.spacer{height:4px}
+
+/* ROWER & STREAK */
+.row-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.row-item:last-child{border-bottom:none;padding-bottom:0}
+.row-km{font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:var(--blue)}
+.hist-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.hist-row:last-child{border-bottom:none;padding-bottom:0}
+.hist-dots{display:flex;gap:3px;align-items:center}
+.hist-dot{width:7px;height:7px;border-radius:50%;background:var(--bg4)}
+.hist-dot.done{background:var(--accent)}
+/* RECIPE PICKER */
+.recipe-chip{background:var(--bg3);border:1px solid var(--border);border-radius:999px;padding:5px 11px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap}
+.recipe-chip.active{background:rgba(200,242,64,.12);border-color:var(--accent);color:var(--accent)}
+/* REP LOG */
+.rep-set-pill{display:inline-flex;align-items:center;gap:3px;background:var(--bg4);border-radius:6px;padding:3px 9px;font-size:12px;font-family:'DM Mono',monospace}
+.rep-bar{border-radius:3px 3px 0 0;width:100%;transition:height .3s ease}
+select.input-field{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+
+/* STUDIO ROBSON BRAND */
+.studio-brand{padding:2px 0 4px}
+.studio-stripe{display:flex;height:4px;border-radius:3px;overflow:hidden;gap:2px;margin-bottom:14px}
+.studio-stripe span{flex:1;border-radius:3px}
+.studio-name{font-size:28px;font-weight:700;letter-spacing:-1px;line-height:1;background:linear-gradient(90deg,#ff0080 0%,#ff9a3c 22%,#c8f240 42%,#00e5ff 60%,#b46ef5 78%,#ff5252 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.studio-tagline{font-size:10px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;margin-top:5px;display:flex;gap:6px;align-items:center}
+.studio-tagline .t1{color:#c8f240}
+.studio-tagline .t2{color:#00e5ff}
+.studio-tagline .t3{color:#ff0080}
+.studio-tagline .dot{color:var(--text3);font-size:8px}
+.studio-logo{width:82px;height:auto;filter:drop-shadow(0 0 14px rgba(255,0,128,.35)) drop-shadow(0 0 28px rgba(0,229,255,.2));flex-shrink:0}
+.studio-deco{width:38px;height:auto;filter:drop-shadow(0 0 8px rgba(200,242,64,.45));opacity:.85;flex-shrink:0}
+
+/* ── SESSIE / OEFENINGEN (v2) ─────────────────────────────────── */
+.wo-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .2s}
+.wo-card:active{border-color:var(--accent)}
+.wo-icon{width:38px;height:38px;border-radius:10px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.wo-info{flex:1;min-width:0}
+.wo-name{font-size:14px;font-weight:600}
+.wo-meta{font-size:11px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wo-go{color:var(--text3);font-size:18px;flex-shrink:0}
+
+.sess-ex{border-bottom:1px solid var(--border);padding:12px 0}
+.sess-ex:last-child{border-bottom:none;padding-bottom:2px}
+.sess-ex-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:7px}
+.sess-ex-name{font-size:14px;font-weight:600;line-height:1.25}
+.sess-ex-target{font-size:11px;color:var(--text3);white-space:nowrap;font-family:'DM Mono',monospace}
+.prev-line{font-size:11px;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.prev-val{font-family:'DM Mono',monospace;color:var(--blue);font-weight:500}
+.pr-tag{font-size:9px;font-weight:700;letter-spacing:.4px;background:rgba(255,154,60,.14);color:var(--orange);padding:2px 6px;border-radius:999px}
+.set-inputs{display:flex;gap:6px;align-items:center}
+.set-inputs .input-field{padding:9px 10px;font-size:14px;font-family:'DM Mono',monospace;text-align:center;min-width:0}
+.set-unit{font-size:11px;color:var(--text3);margin-left:-2px}
+.btn-set{background:var(--bg4);color:var(--text);border:none;border-radius:var(--r2);padding:9px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0;transition:background .15s}
+.btn-set:active{background:var(--accent);color:#0f0f0f}
+.set-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.set-pill{display:inline-flex;align-items:center;gap:4px;background:var(--bg4);border-radius:6px;padding:4px 8px;font-size:12px;font-family:'DM Mono',monospace}
+.set-pill.beat{background:rgba(200,242,64,.14);color:var(--accent)}
+.sess-bar{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.goal-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.goal-row:last-child{border-bottom:none;padding-bottom:0}
+.goal-lbl{font-size:13px;flex:1}
+.goal-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace;min-width:62px;text-align:right}
+.goal-dots{display:flex;gap:4px}
+.goal-dot{width:9px;height:9px;border-radius:50%;background:var(--bg4)}
+.goal-dot.done{background:var(--accent)}
+.goal-dot.done.blue{background:var(--blue)}
+.mini-bars{display:flex;align-items:flex-end;gap:3px;height:48px}
+.mini-bar{width:100%;align-self:stretch;border-radius:2px 2px 0 0;background:rgba(200,242,64,.32);min-height:3px}
+.mini-bar.last{background:var(--accent)}
+.note-box{background:rgba(200,242,64,.05);border:1px solid rgba(200,242,64,.16);border-radius:var(--r2);padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.55}
+.note-box b{color:var(--accent);font-weight:600}
+.upd-banner{position:fixed;left:50%;transform:translateX(-50%);bottom:76px;background:var(--accent);color:#0f0f0f;font-size:12.5px;font-weight:600;padding:7px 8px 7px 14px;border-radius:999px;z-index:998;display:none;align-items:center;gap:9px;white-space:nowrap;max-width:calc(100vw - 32px);box-shadow:0 4px 18px rgba(0,0,0,.5)}
+.upd-banner button{background:#0f0f0f;color:var(--accent);border:none;border-radius:999px;padding:4px 11px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="pages">
+
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="studio-brand">
+        <div class="studio-stripe">
+          <span style="background:#ff0080"></span>
+          <span style="background:#e0207a"></span>
+          <span style="background:#ff9a3c"></span>
+          <span style="background:#c8f240"></span>
+          <span style="background:#4da6ff"></span>
+          <span style="background:#00e5ff"></span>
+          <span style="background:#b46ef5"></span>
+          <span style="background:#9c1fcc"></span>
+          <span style="background:#ff5252"></span>
+          <span style="background:#888"></span>
+          <span style="background:#333"></span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div>
+            <div class="studio-name">Studio Robson</div>
+            <div class="studio-tagline">
+              <span class="t1">Train</span>
+              <span class="dot">—</span>
+              <span class="t2">Dream</span>
+              <span class="dot">—</span>
+              <span class="t3">Become</span>
+            </div>
+          </div>
+          <img src="logo.png" alt="" class="studio-logo">
+        </div>
+      </div>
+      <div class="page-header">
+        <div>
+          <div class="page-title" id="home-greeting">Hey! 👋</div>
+          <div class="page-sub" id="home-date"></div>
+        </div>
+      </div>
+
+      <!-- week doelen -->
+      <div class="card">
+        <div class="section-label">Deze week</div>
+        <div class="ring-container" style="margin-bottom:12px">
+          <svg class="ring-svg" width="72" height="72" viewBox="0 0 72 72">
+            <circle cx="36" cy="36" r="28" fill="none" stroke="#2e2e2e" stroke-width="6"/>
+            <circle id="ring-circle" cx="36" cy="36" r="28" fill="none" stroke="#c8f240" stroke-width="6"
+              stroke-linecap="round" stroke-dasharray="175.9" stroke-dashoffset="175.9"
+              transform="rotate(-90 36 36)" style="transition:stroke-dashoffset .6s ease"/>
+            <text x="36" y="40" text-anchor="middle" font-family="DM Sans" font-weight="600" font-size="16" fill="#f0f0f0" id="ring-pct">0%</text>
+          </svg>
+          <div class="ring-info">
+            <div style="font-size:14px;font-weight:600" id="ring-text">0 van 3 sessies</div>
+            <div class="ring-label" id="ring-sub">Start een sessie om af te vinken</div>
+          </div>
+        </div>
+        <div id="home-goals"></div>
+      </div>
+
+      <!-- start sessie -->
+      <div class="card">
+        <div class="row-between" style="margin-bottom:10px">
+          <div class="section-label" style="margin:0">Trainen</div>
+          <img src="logo.png" alt="" class="studio-deco">
+        </div>
+        <div id="home-train-content" style="font-size:13px;color:var(--text2)">Laden...</div>
+      </div>
+
+      <!-- stats -->
+      <div class="stats-grid" id="home-stats">
+        <div class="stat-card">
+          <div class="stat-val" id="stat-gewicht">—</div>
+          <div class="stat-lbl">Gewicht (kg)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-bmi">—</div>
+          <div class="stat-lbl">BMI</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-volume" style="color:var(--accent)">0</div>
+          <div class="stat-lbl">Volume / week (kg)</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px" id="stat-volume-prev">vorige week —</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="streak-val" style="color:var(--orange)">0</div>
+          <div class="stat-lbl">🔥 Streak (weken)</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px" id="streak-best-lbl">Best: 0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-eiwit">165g</div>
+          <div class="stat-lbl">Eiwitdoel / dag</div>
+        </div>
+        <div class="stat-card accent">
+          <div class="stat-val">2500</div>
+          <div class="stat-lbl">kcal doel / dag</div>
+        </div>
+      </div>
+
+      <div class="note-box">Spiergroei komt van <b>progressieve overload</b>: elke sessie iets meer gewicht, reps of sets dan de vorige keer. De app toont bij elke oefening je vorige resultaat — pak dat als doel.</div>
+    </div>
+
+    <!-- TRAINING -->
+    <div class="page" id="page-training">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Training</div>
+          <div class="page-sub" id="train-sub">Kies een sessie</div>
+        </div>
+      </div>
+
+      <!-- actieve sessie -->
+      <div id="active-session"></div>
+
+      <!-- workout keuze -->
+      <div id="workout-picker"></div>
+
+      <!-- roeier kaart -->
+      <div class="card" id="row-card">
+        <div class="row-between" style="margin-bottom:8px">
+          <div class="section-label" style="margin:0">Roeier — cardio</div>
+          <span style="font-size:12px;font-weight:600;font-family:'DM Mono',monospace;color:var(--blue)" id="row-week-label">0 / 12 km</span>
+        </div>
+        <div class="pbar-wrap" style="margin-bottom:12px"><div class="pbar" id="row-week-pbar" style="background:var(--blue);width:0%"></div></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input class="input-field" id="inp-row-km" type="number" inputmode="decimal" placeholder="km geroeid" step="0.1" min="0.1" max="30" style="flex:1">
+          <button class="btn-primary" style="width:auto;padding:10px 16px" onclick="logRow()">+</button>
+        </div>
+        <div id="row-recent"></div>
+        <div id="row-history-wrap" style="margin-top:12px;display:none">
+          <div class="section-label">Vorige weken</div>
+          <div id="row-history"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VOEDING -->
+    <div class="page" id="page-voeding">
+      <div class="page-header">
+        <div class="page-title">Voeding</div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('mealprep')">Mealprep</button>
+        <button class="tab" onclick="switchTab('avond')">Avond</button>
+        <button class="tab" onclick="switchTab('boodschappen')">Boodschappen</button>
+      </div>
+      <div class="tab-content active" id="tab-mealprep" style="gap:12px"></div>
+      <div class="tab-content" id="tab-avond" style="gap:12px"></div>
+      <div class="tab-content" id="tab-boodschappen"></div>
+    </div>
+
+    <!-- PROFIEL -->
+    <div class="page" id="page-profiel">
+      <div class="page-header">
+        <div class="page-title">Profiel</div>
+      </div>
+      <div class="card">
+        <div class="section-label">Jouw gegevens</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="input-group">
+            <label class="input-label">Naam</label>
+            <input class="input-field" id="inp-naam" type="text" placeholder="Jouw naam">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="input-group">
+              <label class="input-label">Gewicht (kg)</label>
+              <input class="input-field" id="inp-gewicht" type="number" inputmode="decimal" placeholder="80" min="40" max="200" step="0.1">
+            </div>
+            <div class="input-group">
+              <label class="input-label">Lengte (cm)</label>
+              <input class="input-field" id="inp-lengte" type="number" inputmode="numeric" placeholder="175" min="140" max="220">
+            </div>
+          </div>
+          <button class="btn-primary" onclick="saveProfile()">Opslaan</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Weekdoelen</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div class="input-group">
+            <label class="input-label">Basic Fit / week</label>
+            <input class="input-field" id="inp-goal-gym" type="number" inputmode="numeric" placeholder="3" min="1" max="7">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Thuis / week</label>
+            <input class="input-field" id="inp-goal-thuis" type="number" inputmode="numeric" placeholder="2" min="0" max="7">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Roeier (km / week)</label>
+            <input class="input-field" id="inp-row-goal" type="number" inputmode="decimal" placeholder="12" min="0" max="100" step="0.5">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Eiwit (g / dag)</label>
+            <input class="input-field" id="inp-goal-eiwit" type="number" inputmode="numeric" placeholder="165" min="50" max="400">
+          </div>
+        </div>
+        <button class="btn-primary" onclick="saveGoals()">Doelen opslaan</button>
+      </div>
+
+      <div class="card" id="bmi-section" style="display:none">
+        <div class="section-label">BMI &amp; gezondheid</div>
+        <div class="bmi-card">
+          <div class="bmi-circle" id="bmi-circle">
+            <div class="bmi-val" id="bmi-val">—</div>
+            <div class="bmi-lbl">BMI</div>
+          </div>
+          <div class="bmi-info">
+            <div class="bmi-cat" id="bmi-cat">—</div>
+            <div class="bmi-sub" id="bmi-sub">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row-between" style="margin-bottom:10px">
+          <div class="section-label" style="margin:0">Gewichtslog</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input class="input-field" id="inp-log-weight" type="number" inputmode="decimal" placeholder="Gewicht (kg)" step="0.1" style="flex:1">
+          <button class="btn-primary" style="width:auto;padding:10px 16px" onclick="logWeight()">+</button>
+        </div>
+        <div class="weight-list" id="weight-list">
+          <div class="empty-state" style="padding:16px">Nog geen metingen</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-label">Data backup</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">Je data staat op dit toestel. Exporteer af en toe een backup — dan raak je niets kwijt bij een nieuwe gsm of als je de browserdata wist.</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-primary" style="flex:1;font-size:13px" onclick="exportData()">↑ Exporteer</button>
+          <button class="btn-primary" style="flex:1;font-size:13px;background:var(--bg3);color:var(--text)" onclick="importData()">↓ Importeer</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-label">Over deze app</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">
+          Studio Robson — versie <span id="app-version" style="font-family:'DM Mono',monospace;color:var(--text)">—</span><br>
+          Updates komen automatisch binnen wanneer je de app opent met internet.
+        </div>
+        <button class="btn-primary" style="margin-top:10px;font-size:13px;background:var(--bg3);color:var(--text)" onclick="checkForUpdate()">Nu controleren op update</button>
+      </div>
+    </div>
+
+    <!-- HISTORIE -->
+    <div class="page" id="page-historie">
+      <div class="page-header">
+        <div class="page-title">Historie</div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchHistTab('training')">Training</button>
+        <button class="tab" onclick="switchHistTab('kracht')">Kracht</button>
+        <button class="tab" onclick="switchHistTab('roeier')">Roeier</button>
+      </div>
+      <div class="tab-content active" id="htab-training" style="gap:8px"></div>
+      <div class="tab-content" id="htab-kracht" style="gap:10px"></div>
+      <div class="tab-content" id="htab-roeier" style="gap:10px"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showPage('home',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('training',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      <span class="nav-label">Training</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('voeding',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+      <span class="nav-label">Voeding</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('profiel',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="nav-label">Profiel</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('historie',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+      <span class="nav-label">Historie</span>
+    </button>
+  </nav>
+  <input type="file" id="import-file" accept=".json" style="display:none" onchange="doImport(event)">
+</div>
+<div class="upd-banner" id="upd-banner">Nieuwe versie beschikbaar <button onclick="applyUpdate()">Vernieuwen</button></div>
+<script>
+const APP_VERSION = '2.0.0';
+
+// ── WORKOUTS ──────────────────────────────────────────────────────
+// LET OP: het Basic Fit-gedeelte is een STARTVOORSTEL (hypertrofie, full body
+// A/B/C in rotatie — bij 3×/week raakt elke spiergroep 3× per week, wat bij die
+// frequentie beter werkt dan een split). Vervang de oefeningen door wat je
+// daar werkelijk doet: alleen deze array aanpassen, de rest van de app volgt.
+//   w:true  = met gewicht (kg × reps)   w:false = lichaamsgewicht (reps)
+const WORKOUTS = [
+  {id:'gymA', name:'Basic Fit — Full body A', loc:'gym', icon:'🏋️', badge:'blue',
+   focus:'Squat · bench · lat pulldown',
+   exercises:[
+     {name:'Barbell squat',            sets:3, reps:'8–10',  w:true},
+     {name:'Bench press',              sets:3, reps:'8–10',  w:true},
+     {name:'Lat pulldown',             sets:3, reps:'10–12', w:true},
+     {name:'Dumbbell shoulder press',  sets:3, reps:'10–12', w:true},
+     {name:'Leg curl',                 sets:3, reps:'12–15', w:true},
+     {name:'Triceps pushdown',         sets:3, reps:'12–15', w:true},
+   ]},
+  {id:'gymB', name:'Basic Fit — Full body B', loc:'gym', icon:'🏋️', badge:'green',
+   focus:'RDL · roeien · leg press',
+   exercises:[
+     {name:'Romanian deadlift',        sets:3, reps:'8–10',  w:true},
+     {name:'Seated cable row',         sets:3, reps:'10–12', w:true},
+     {name:'Leg press',                sets:3, reps:'10–12', w:true},
+     {name:'Incline dumbbell press',   sets:3, reps:'10–12', w:true},
+     {name:'Lateral raise',            sets:3, reps:'12–15', w:true},
+     {name:'Biceps curl',              sets:3, reps:'12–15', w:true},
+   ]},
+  {id:'gymC', name:'Basic Fit — Full body C', loc:'gym', icon:'🏋️', badge:'orange',
+   focus:'Deadlift · pull-up · split squat',
+   exercises:[
+     {name:'Deadlift',                 sets:3, reps:'5–8',   w:true},
+     {name:'Pull-up (of assisted)',    sets:3, reps:'max',   w:false},
+     {name:'Bulgarian split squat',    sets:3, reps:'10 p/b',w:true},
+     {name:'Chest press machine',      sets:3, reps:'10–12', w:true},
+     {name:'Cable fly',                sets:3, reps:'12–15', w:true},
+     {name:'Face pull',                sets:3, reps:'15',    w:true},
+   ]},
+  {id:'thuisUp', name:'Thuis — Bovenlichaam', loc:'thuis', icon:'🏠', badge:'purple',
+   focus:'Optrekken · dips · push-ups',
+   exercises:[
+     {name:'Pull-ups',                 sets:4, reps:'max',    w:false},
+     {name:'Dips',                     sets:4, reps:'8–12',   w:false},
+     {name:'Chin-ups',                 sets:3, reps:'6–10',   w:false},
+     {name:'Pike push-ups',            sets:3, reps:'10',     w:false},
+     {name:'Push-ups',                 sets:3, reps:'max',    w:false},
+   ]},
+  {id:'thuisCore', name:'Thuis — Roeier + core', loc:'thuis', icon:'🚣', badge:'blue',
+   focus:'Roeien · plank · hollow body',
+   exercises:[
+     {name:'Plank schoudertouch',      sets:3, reps:'10 p/k', w:false},
+     {name:'Hollow body hold',         sets:3, reps:'20 sec', w:false},
+     {name:'Zijwaartse plank',         sets:2, reps:'30 sec', w:false},
+   ],
+   hint:'Log je kilometers in de roeierkaart onderaan.'},
+];
+const WO = Object.fromEntries(WORKOUTS.map(w=>[w.id,w]));
+const BADGE_COLOR = {push:'blue',pull:'green',full:'orange',cardio:'purple',rest:'gray'};
+
+const MEALPREP = [
+  {title:'Kip-rijst bowls met geroosterde groenten', icon:'🥘', time:'prep: 35 min', portions:'4 porties', macros:'~42g eiwit / portie',
+   ingredients:[['Kipfilet','600g totaal'],['Basmatirijst (droog)','320g'],['Paprika (rood + geel)','2 stuks'],['Courgette','1 stuks'],['Rode ui','1 stuks'],['Olijfolie','3 el'],['Paprikapoeder, knoflookpoeder, zout','']],
+   steps:['Verwarm oven op 200°C. Snij groenten in stukken, meng met olie en kruiden, rooster 25 min.','Kook rijst ondertussen volgens verpakking.','Kruid kip met paprika- en knoflookpoeder. Grill of bak in pan, 6–7 min per kant.','Laat alles afkoelen voor je het in bakjes verdeelt.'],
+   tip:'Voeg per portie een schep hummus of tzatziki toe voor extra smaak en eiwitten.'},
+  {title:'Parelcouscous salade met tonijn & kikkererwten', icon:'🫙', time:'prep: 20 min', portions:'4 porties', macros:'~38g eiwit / portie',
+   ingredients:[['Parelcouscous (droog)','300g'],['Tonijn in water (blik)','3 blikjes (à 130g)'],['Kikkererwten (blik, uitgelekt)','240g'],['Cherrytomaten','200g'],['Komkommer','½ stuks'],['Citroensap + olijfolie','2 el elk'],['Platte peterselie, zout, peper','']],
+   steps:['Kook parelcouscous 8–10 min, spoel af met koud water, laat uitlekken.','Snij tomaten en komkommer klein.','Meng alles: couscous, tonijn, kikkererwten, groenten, citroensap, olie en kruiden.','Verdeel over 4 bakjes. Koud bewaren — tot 4 dagen houdbaar.'],
+   tip:'Lekkerder de volgende dag als de smaken intrekken.'},
+  {title:'Pasta pesto kip met zongedroogde tomaten', icon:'🍃', time:'prep: 25 min', portions:'4 porties', macros:'~44g eiwit / portie',
+   ingredients:[['Penne of fusilli','320g'],['Kipfilet','500g'],['Groene pesto','4 el'],['Zongedroogde tomaten','80g'],['Verse spinazie of rucola','80g'],['Parmezaan (geraspt)','40g'],['Pijnboompitten','30g'],['Olijfolie, zout, peper','']],
+   steps:['Kook pasta al dente. Spoel af met koud water en laat uitlekken.','Snij kip in blokjes, bak goudbruin in olie. Kruid met zout en peper. Laat afkoelen.','Meng pasta, kip, pesto, zongedroogde tomaten en spinazie goed door elkaar.','Verdeel over 4 bakjes. Bestrooi met pijnboompitten en Parmezaan.'],
+   tip:'Voeg pesto pas toe net voor het eten voor de frisste smaak. Houdbaar 4 dagen.'},
+  {title:'Macaroni tonijn ovenschotel', icon:'🧀', time:'prep: 40 min', portions:'4 porties', macros:'~40g eiwit / portie',
+   ingredients:[['Macaroni of penne','300g'],['Tonijn in water (blik)','2 blikjes (à 130g)'],['Cherrytomaten','200g'],['Paprika (rood)','1 stuk'],['Mais (blik, uitgelekt)','150g'],['Geraspte mozzarella of kaas','120g'],['Eieren','3 stuks'],['Melk','100ml'],['Olijfolie, oregano, zout, peper','']],
+   steps:['Verwarm oven op 180°C. Kook pasta al dente, laat uitlekken.','Klop eieren los met melk, oregano, zout en peper.','Meng pasta, tonijn (uitgelekt), gesneden groenten en mais. Doe in ovenschaal.','Giet eimengsel erover, verdeel kaas bovenop. Bak 25 min goudbruin.'],
+   tip:'Snij in stukken voor makkelijk bewaren. Smaakt ook koud als lunchsalade.'},
+  {title:'Mexicaanse rijstbowls met kipgehakt', icon:'🌮', time:'prep: 30 min', portions:'4 porties', macros:'~46g eiwit / portie',
+   ingredients:[['Basmatirijst (droog)','320g'],['Kipgehakt','500g'],['Mais (blik, uitgelekt)','200g'],['Kidney bonen (blik, uitgelekt)','200g'],['Paprika (rood)','2 stuks'],['Passata (gezeefde tomaten)','200g'],['Ui (geel)','1 stuk'],['Knoflook','2 teentjes'],['Paprikapoeder, komijn, chilipowder, zout','']],
+   steps:['Kook rijst. Fruit ui en knoflook in olijfolie. Voeg kipgehakt toe, bak rul en gaar.','Voeg gesneden paprika en kruiden toe, roerbak 3 min.','Voeg mais, bonen en passata toe. Laat 10 min sudderen op laag vuur. Kruid bij.','Verdeel rijst over 4 bakjes, lepel het gehaktmengsel erover.'],
+   tip:'Serveer met een lepel Griekse yoghurt als light sour cream. Invriezen kan ook.'},
+];
+
+const AVOND = [
+  {title:'Pasta met kip, spinazie & ricotta', icon:'🍝', time:'25 min', macros:'~52g eiwit / portie',
+   ingredients:[['Penne of fusilli','160g'],['Kipfilet','250g'],['Verse spinazie','100g'],['Ricotta','120g'],['Knoflook','2 teentjes'],['Parmezaan (geraspt)','30g'],['Olijfolie, zout, peper, nootmuskaat','']],
+   steps:['Kook pasta al dente. Bewaar 1 kop kookwater apart.','Snij kip in blokjes, bak goudbruin in olie met knoflook.','Voeg spinazie toe, laat slinken. Voeg ricotta en wat kookwater toe, roer glad.','Meng pasta erdoor, breng op smaak. Bestrooi met Parmezaan.']},
+  {title:'Rijst met Thaise kip & pindassaus', icon:'🍛', time:'30 min', macros:'~55g eiwit / portie',
+   ingredients:[['Basmatirijst (droog)','160g'],['Kipfilet','300g'],['Pindakaas (naturel)','2 el'],['Sojasaus','2 el'],['Limoensap','1 el'],['Knoflook + gember','—'],['Broccoli of sugarsnaps','150g']],
+   steps:['Kook rijst. Stoom of wok de groenten kort.','Meng pindakaas, sojasaus, limoensap, knoflook en een scheutje water tot saus.','Snij kip in reepjes, bak gaar in pan.','Serveer rijst + groenten + kip, giet pindassaus erover.'],
+   tip:'Voeg een handje cashewnoten toe voor extra vetten en bite.'},
+  {title:'Parelcouscous met zalm & geroosterde groenten', icon:'🥗', time:'30 min', macros:'~50g eiwit / portie',
+   ingredients:[['Parelcouscous (droog)','160g'],['Zalmfilet','2 × 160g'],['Aubergine + courgette','1 van elk'],['Cherrytomaten','150g'],['Olijfolie + citroen','—'],['Verse basilicum of munt','—'],['Feta (optioneel)','40g']],
+   steps:['Oven op 200°C. Rooster groenten 20–25 min met olie en zout.','Kook parelcouscous 8–10 min, laat uitlekken.','Bak zalm 3–4 min per kant in pan met beetje olie en citroenrasp.','Meng couscous met groenten, kruid af, leg zalm erop. Verkruimel feta erover.']},
+  {title:'Pasta bolognese met kipgehakt', icon:'🍝', time:'35 min', macros:'~48g eiwit / portie',
+   ingredients:[['Tagliatelle of spaghetti','160g'],['Kipgehakt','350g'],['Passata (gezeefde tomaten)','400g'],['Ui + knoflook','1 + 2 teentjes'],['Wortel + selderij','1 van elk'],['Parmezaan','30g'],['Oregano, basilicum, zout, peper','']],
+   steps:['Fruit ui, knoflook, wortel en selderij aan in olijfolie, 5 min.','Voeg kipgehakt toe, bak rul en gaar.','Voeg passata en kruiden toe, laat 15–20 min sudderen op laag vuur.','Kook pasta al dente. Meng met saus, bestrooi met Parmezaan.'],
+   tip:'Maak dubbele portie saus en vries de helft in — perfecte backup voor drukke avonden.'},
+  {title:'Pasta arrabiata met kip & chorizo', icon:'🌶️', time:'25 min', macros:'~52g eiwit / portie',
+   ingredients:[['Penne','160g'],['Kipfilet','200g'],['Chorizo (gedroogd, in plakjes)','60g'],['Passata (gezeefde tomaten)','300g'],['Knoflook','3 teentjes'],['Chilivlokken of rode peper','1 tl'],['Parmezaan (geraspt)','25g'],['Olijfolie, zout, peper','']],
+   steps:['Kook pasta al dente. Bak chorizo krokant in droge pan, zet apart.','Bak kip in dezelfde pan, snij in stukken. Voeg knoflook en chili toe, bak 1 min.','Voeg passata toe, laat 10 min sudderen. Kruid met zout en peper.','Meng pasta met saus, schep chorizo erover. Bestrooi met Parmezaan.']},
+  {title:'Pasta carbonara light met kalkoen', icon:'🥚', time:'20 min', macros:'~54g eiwit / portie',
+   ingredients:[['Spaghetti of linguine','160g'],['Kalkoenreepjes of kalkoenspek','200g'],['Eieren','2 stuks'],['Extra eierdooiers','2 stuks'],['Parmezaan (geraspt)','40g'],['Knoflook','1 teentje'],['Zwarte peper (grof gemalen), zout','']],
+   steps:['Kook pasta al dente. Bewaar 1 kop kookwater.','Bak kalkoen knapperig in pan met knoflook. Zet vuur daarna laag.','Klop eieren + dooiers met Parmezaan en royaal zwarte peper.','Haal pan van vuur. Voeg pasta toe, giet eimengsel er snel over en roer tot romige saus. Gebruik kookwater om te verdunnen.'],
+   tip:'Altijd van het vuur halen voor het ei erin gaat — zo krijg je een romige saus zonder roerei.'},
+  {title:'Pasta met zalm & lichte roomsaus', icon:'🐟', time:'25 min', macros:'~52g eiwit / portie',
+   ingredients:[['Pasta (naar keuze)','160g'],['Zalmfilet','200g'],['Light roomkaas of ricotta','100g'],['Verse spinazie','80g'],['Knoflook','2 teentjes'],['Citroensap','1 el'],['Kappertjes (optioneel)','1 el'],['Olijfolie, dille, zout, peper','']],
+   steps:['Kook pasta. Bak zalmfilet 3–4 min per kant. Verwijder huid, breek in stukken.','Fruit knoflook in dezelfde pan. Voeg spinazie toe, laat slinken.','Voeg roomkaas en scheutje kookwater toe, roer glad. Breng op smaak met citroen en dille.','Meng pasta met saus, leg zalmstukjes erop.']},
+  {title:'Pasta met gehakt & groenten bolognese', icon:'🍅', time:'30 min', macros:'~50g eiwit / portie',
+   ingredients:[['Rigatoni of penne','160g'],['Rundergehakt of kipgehakt','300g'],['Paprika (rood)','1 stuk'],['Courgette','½ stuk'],['Passata (gezeefde tomaten)','350g'],['Ui (geel)','1 stuk'],['Knoflook','2 teentjes'],['Parmezaan (geraspt)','30g'],['Oregano, basilicum, zout, peper','']],
+   steps:['Fruit ui, knoflook en groenten in olijfolie, 5 min.','Voeg gehakt toe, bak rul en gaar.','Voeg passata en kruiden toe, laat 15 min sudderen.','Kook pasta al dente. Meng met saus, bestrooi met Parmezaan.'],
+   tip:'Makkelijk te verdubbelen — de saus bevriest uitstekend.'},
+  {title:'Kip shawarma wraps', icon:'🌯', time:'20 min', macros:'~48g eiwit / portie',
+   ingredients:[['Kipfilet','300g'],['Volkoren wraps','2 stuks'],['Hummus','4 el'],['Rode ui','½ stuk'],['Cherrytomaten','100g'],['IJsbergsla of rucola','50g'],['Komkommer','½ stuk'],['Griekse yoghurt','4 el'],['Komijn, paprikapoeder, kurkuma, knoflookpoeder','']],
+   steps:['Kruid kip met komijn, paprikapoeder, kurkuma en knoflookpoeder. Bak 6–7 min per kant, snij in reepjes.','Snij groenten fijn. Verwarm wraps 30 sec in droge pan.','Smeer hummus op wrap. Leg sla, tomaten, komkommer, rode ui en kip erop.','Lepel Griekse yoghurt erop. Rol stevig op en snij diagonaal door.']},
+  {title:'Zoete aardappel met kip & quinoa', icon:'🍠', time:'35 min', macros:'~46g eiwit / portie',
+   ingredients:[['Zoete aardappel','1 grote (±300g)'],['Kipfilet','250g'],['Quinoa (droog)','80g'],['Verse spinazie','60g'],['Cherrytomaten','100g'],['Feta (optioneel)','40g'],['Olijfolie, paprikapoeder, knoflookpoeder, zout','']],
+   steps:['Verwarm oven op 200°C. Snij zoete aardappel in blokjes, meng met olie en kruiden, rooster 25 min.','Kook quinoa 12 min, laat uitlekken.','Bak kip goudbruin, snij in stukken.','Meng quinoa, spinazie, tomaten en aardappel. Leg kip erop. Verkruimel feta.'],
+   tip:'Quinoa is een complete eiwitbron — ideaal aanvulling op de kip.'},
+];
+
+const GROCERY = [
+  {cat:'Vlees & vis', items:[['Kipfilet','1,5 kg'],['Kipgehakt','350g'],['Zalmfilet','2 × 160g'],['Tonijn in water (blik)','3 blikjes']]},
+  {cat:'Zuivel & eieren', items:[['Skyr of Griekse yoghurt','1 kg'],['Kwark of cottage cheese','500g'],['Ricotta','120g'],['Parmezaan (geraspt)','60g'],['Feta (optioneel)','40g'],['Eieren','6 stuks']]},
+  {cat:'Granen & pasta', items:[['Basmatirijst','800g'],['Parelcouscous','500g'],['Penne of fusilli','160g'],['Tagliatelle of spaghetti','160g'],['Havermout','500g'],['Volkoren brood','1 brood'],['Rijstwafels','1 pak']]},
+  {cat:'Groenten & fruit', items:[['Paprika (rood + geel)','4 stuks'],['Courgette','2 stuks'],['Aubergine','1 stuks'],['Broccoli','1 stuks'],['Verse spinazie','200g'],['Cherrytomaten','350g'],['Komkommer','1 stuks'],['Rode ui','2 stuks'],['Ui (geel)','2 stuks'],['Knoflook','1 bol'],['Wortel','2 stuks'],['Selderij','½ stengel'],['Aardappelen','500g'],['Bananen','5–6 stuks'],['Bessen (vers of diepvries)','200g'],['Citroen + limoen','2 + 1'],['Verse basilicum of munt','1 potje'],['Platte peterselie','1 bosje']]},
+  {cat:'Blik & droog', items:[['Kikkererwten (blik)','1 blik (400g)'],['Passata (gezeefde tomaten)','400g'],['Pindakaas (naturel)','1 pot'],['Sojasaus','1 fles'],['Gemengde noten','200g'],['Cashewnoten (optioneel)','100g'],['Honing','1 pot']]},
+  {cat:'Kruiden & oliën', items:[['Olijfolie','1 fles'],['Paprikapoeder (gerookt)','1 potje'],['Knoflookpoeder','1 potje'],['Oregano + basilicum (droog)','1 potje elk'],['Nootmuskaat','1 potje'],['Gemberpoeder of verse gember','1 potje / stuk']]},
+];
+
+// ── STATE ─────────────────────────────────────────────────────────
+let state = JSON.parse(localStorage.getItem('fittrack') || '{}');
+if(!state.trainDone)       state.trainDone = {};      // legacy (oud vast weekschema)
+if(!state.repLog)          state.repLog = [];         // legacy (losse reps)
+if(!state.groceryDone)     state.groceryDone = {};
+if(!state.weightLog)       state.weightLog = [];
+if(!state.profile)         state.profile = {};
+if(!state.rowLog)          state.rowLog = [];
+if(!state.bestStreak)      state.bestStreak = 0;
+if(!state.selectedRecipes) state.selectedRecipes = [];
+if(!state.sessions)        state.sessions = [];       // {ts,date,week,wid,name,loc,sets:[{ex,kg,reps,w}]}
+if(!state.goals)           state.goals = {};
+if(state.goals.gym==null)    state.goals.gym   = 3;
+if(state.goals.thuis==null)  state.goals.thuis = 2;
+if(state.goals.eiwit==null)  state.goals.eiwit = 165;
+if(state.rowGoal==null)      state.rowGoal = 12;
+if(state.goals.rowKm==null)  state.goals.rowKm = state.rowGoal;
+if(state.draft===undefined)  state.draft = null;      // lopende sessie
+
+function save(){
+  try{ localStorage.setItem('fittrack', JSON.stringify(state)); }
+  catch(e){ showToast('Opslaan mislukt - geheugen vol?'); }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function getCurrentWeekKey(d){
+  const now = d ? new Date(d) : new Date();
+  const x = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const dayNum = x.getUTCDay() || 7;
+  x.setUTCDate(x.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(x.getUTCFullYear(),0,1));
+  return x.getUTCFullYear()+'W'+Math.ceil((((x-yearStart)/86400000)+1)/7);
+}
+function weekKeyToNum(w){ const p=w.split('W'); return parseInt(p[0])*100+parseInt(p[1]); }
+function weekKeyToDate(w){ const p=w.split('W'); return 'W'+p[1]+" '"+String(p[0]).slice(2); }
+function todayStr(){ return new Date().toLocaleDateString('nl-BE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+// Vorige keer dat deze oefening gedaan is - beste set van die sessie
+function lastFor(ex){
+  for(const s of state.sessions){
+    const sets = (s.sets||[]).filter(x=>x.ex===ex);
+    if(!sets.length) continue;
+    const best = sets.slice().sort((a,b)=> (b.kg||0)-(a.kg||0) || b.reps-a.reps )[0];
+    return {kg:best.kg||0, reps:best.reps, date:s.date, sets:sets.length};
+  }
+  const old = state.repLog.find(e=>e.ex===ex);   // val terug op de oude reps-log
+  if(old) return {kg:0, reps:old.reps, date:old.date, sets:1, legacy:true};
+  return null;
+}
+
+// Beste ooit
+function bestFor(ex){
+  let best = null;
+  state.sessions.forEach(s=>(s.sets||[]).forEach(x=>{
+    if(x.ex!==ex) return;
+    if(!best || (x.kg||0)>(best.kg||0) || ((x.kg||0)===(best.kg||0) && x.reps>best.reps)) best={kg:x.kg||0,reps:x.reps};
+  }));
+  state.repLog.filter(e=>e.ex===ex).forEach(e=>{
+    if(!best || ((best.kg||0)===0 && e.reps>best.reps)) best={kg:0,reps:e.reps};
+  });
+  return best;
+}
+function beatsPrev(set, prev, weighted){
+  if(!prev) return false;
+  if(weighted) return (set.kg>prev.kg) || (set.kg===prev.kg && set.reps>prev.reps);
+  return set.reps>prev.reps;
+}
+function sessionVolume(s){ return (s.sets||[]).reduce((t,x)=>t+((x.kg||0)*x.reps),0); }
+function getWeekRowKm(weekKey){ return state.rowLog.filter(e=>e.week===weekKey).reduce((s,e)=>s+e.km,0); }
+function legacyWeekDone(w){ return Object.keys(state.trainDone).filter(k=>k.indexOf(w+'_')===0 && state.trainDone[k]).length; }
+
+function weekStats(w){
+  const ses = state.sessions.filter(s=>s.week===w);
+  const legacy = legacyWeekDone(w);
+  return {
+    gym:    ses.filter(s=>s.loc==='gym').length,
+    thuis:  ses.filter(s=>s.loc==='thuis').length + legacy,
+    rowKm:  getWeekRowKm(w),
+    volume: ses.reduce((t,s)=>t+sessionVolume(s),0),
+    total:  ses.length + legacy
+  };
+}
+function allWeeks(){
+  const set = new Set(state.sessions.map(s=>s.week));
+  state.rowLog.forEach(e=>set.add(e.week));
+  Object.keys(state.trainDone).forEach(k=>{ if(state.trainDone[k]) set.add(k.split('_')[0]); });
+  set.add(getCurrentWeekKey());
+  return [...set].sort((a,b)=>weekKeyToNum(b)-weekKeyToNum(a));
+}
+function calcStreak(){
+  const cur = getCurrentWeekKey();
+  const weeks = allWeeks().filter(w=>w!==cur);
+  let streak = 0;
+  for(const w of weeks){
+    if(weekStats(w).total >= state.goals.gym) streak++; else break;
+  }
+  if(streak > state.bestStreak){ state.bestStreak = streak; save(); }
+  return {streak:streak, best:state.bestStreak};
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────
+function showPage(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const pg = document.getElementById('page-'+id);
+  pg.classList.add('active');
+  pg.scrollTop = 0;
+  if(btn) btn.classList.add('active');
+  if(id==='home')     updateHome();
+  if(id==='training') renderTraining();
+  if(id==='historie') renderHistorie();
+}
+function gotoTraining(){ showPage('training', document.querySelectorAll('.nav-btn')[1]); }
+
+// ── HOME ──────────────────────────────────────────────────────────
+function updateHome(){
+  const now = new Date();
+  const dagen   = ['Zondag','Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag'];
+  const maanden = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  document.getElementById('home-date').textContent =
+    dagen[now.getDay()]+' '+now.getDate()+' '+maanden[now.getMonth()]+' '+now.getFullYear();
+  const naam = state.profile.naam;
+  document.getElementById('home-greeting').textContent = naam ? 'Hey, '+naam+'! 👋' : 'Hey! 👋';
+
+  if(state.weightLog.length){
+    document.getElementById('stat-gewicht').textContent = state.weightLog[0].w.toFixed(1);
+    const h = state.profile.lengte;
+    if(h) document.getElementById('stat-bmi').textContent = (state.weightLog[0].w/Math.pow(h/100,2)).toFixed(1);
+  }
+  document.getElementById('stat-eiwit').textContent = state.goals.eiwit+'g';
+
+  const week = getCurrentWeekKey();
+  const st   = weekStats(week);
+  const goal = state.goals.gym;
+  const pct  = goal ? Math.min(1, st.gym/goal) : 0;
+  const circ = 175.9;
+  document.getElementById('ring-circle').style.strokeDashoffset = circ - circ*pct;
+  document.getElementById('ring-pct').textContent = Math.round(pct*100)+'%';
+  document.getElementById('ring-text').textContent = st.gym+' van '+goal+' × Basic Fit';
+  document.getElementById('ring-sub').textContent = st.gym>=goal
+    ? 'Weekdoel gehaald 💪'
+    : (goal-st.gym)+' te gaan · '+st.thuis+' thuissessie'+(st.thuis===1?'':'s')+' erbij';
+
+  const dots = (n,max)=>Array.from({length:Math.max(max,1)},(_,i)=>
+    '<div class="goal-dot'+(i<n?' done':'')+'"></div>').join('');
+  const rowPct = state.goals.rowKm ? Math.min(100, st.rowKm/state.goals.rowKm*100) : 0;
+  document.getElementById('home-goals').innerHTML =
+    '<div class="goal-row"><span class="goal-lbl">🏋️ Basic Fit</span>'+
+      '<div class="goal-dots">'+dots(st.gym, Math.max(goal, st.gym))+'</div>'+
+      '<span class="goal-val" style="color:'+(st.gym>=goal?'var(--accent)':'var(--text)')+'">'+st.gym+' / '+goal+'</span></div>'+
+    '<div class="goal-row"><span class="goal-lbl">🏠 Thuis</span>'+
+      '<div class="goal-dots">'+dots(st.thuis, Math.max(state.goals.thuis, st.thuis))+'</div>'+
+      '<span class="goal-val" style="color:'+(st.thuis>=state.goals.thuis?'var(--accent)':'var(--text)')+'">'+st.thuis+' / '+state.goals.thuis+'</span></div>'+
+    '<div class="goal-row"><span class="goal-lbl">🚣 Roeier</span>'+
+      '<div style="flex:1;max-width:96px"><div class="pbar-wrap"><div class="pbar" style="background:var(--blue);width:'+rowPct+'%"></div></div></div>'+
+      '<span class="goal-val" style="color:var(--blue)">'+st.rowKm.toFixed(1)+' km</span></div>';
+
+  const prevWeek = allWeeks().filter(w=>weekKeyToNum(w)<weekKeyToNum(week))[0];
+  const prevVol  = prevWeek ? weekStats(prevWeek).volume : 0;
+  document.getElementById('stat-volume').textContent = Math.round(st.volume).toLocaleString('nl-BE');
+  const dv = st.volume - prevVol;
+  document.getElementById('stat-volume-prev').innerHTML = prevVol
+    ? 'vorige week '+Math.round(prevVol).toLocaleString('nl-BE')+
+      ' <span style="color:'+(dv>=0?'var(--accent)':'var(--red)')+'">'+(dv>=0?'▲':'▼')+' '+
+      Math.abs(Math.round(dv)).toLocaleString('nl-BE')+'</span>'
+    : 'vorige week —';
+
+  const s = calcStreak();
+  document.getElementById('streak-val').textContent = s.streak;
+  document.getElementById('streak-best-lbl').textContent = 'Best: '+s.best+' wk';
+
+  const tc = document.getElementById('home-train-content');
+  if(state.draft){
+    const w = WO[state.draft.wid];
+    const n = state.draft.sets.length;
+    tc.innerHTML = '<div style="margin-bottom:8px"><span class="badge badge-orange">Sessie bezig</span></div>'+
+      '<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px">'+esc(w?w.name:'Sessie')+'</div>'+
+      '<div style="font-size:12px;color:var(--text2);margin-bottom:12px">'+n+' set'+(n===1?'':'s')+' gelogd</div>'+
+      '<button class="btn-primary" onclick="gotoTraining()">Verder trainen →</button>';
+  } else {
+    const nxt = suggestWorkout();
+    tc.innerHTML = '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Volgende aan de beurt: <b style="color:var(--text)">'+esc(nxt.name)+'</b></div>'+
+      '<button class="btn-primary" style="margin-bottom:8px" onclick="startWorkout(\''+nxt.id+'\');gotoTraining()">Start deze sessie</button>'+
+      '<button class="btn-primary" style="background:var(--bg3);color:var(--text)" onclick="gotoTraining()">Andere sessie kiezen</button>';
+  }
+}
+
+// Volgende workout: rouleer door gym A/B/C - die je het langst niet deed
+function suggestWorkout(){
+  const gym = WORKOUTS.filter(w=>w.loc==='gym');
+  const lastIdx = {};
+  gym.forEach(w=>{ lastIdx[w.id] = state.sessions.findIndex(s=>s.wid===w.id); });
+  const never = gym.find(w=>lastIdx[w.id]===-1);
+  if(never) return never;
+  return gym.slice().sort((a,b)=>lastIdx[b.id]-lastIdx[a.id])[0];
+}
+
+// ── TRAINING: SESSIE ──────────────────────────────────────────────
+function renderTraining(){
+  renderActiveSession();
+  renderWorkoutPicker();
+  renderRowSection();
+  document.getElementById('train-sub').textContent = state.draft
+    ? 'Sessie bezig — log je sets'
+    : 'Kies een sessie';
+}
+
+function renderWorkoutPicker(){
+  const el = document.getElementById('workout-picker');
+  if(state.draft){ el.innerHTML=''; el.style.display='none'; return; }
+  el.style.display='';
+  const nxt = suggestWorkout();
+  const groups = [
+    {label:'Basic Fit', items:WORKOUTS.filter(w=>w.loc==='gym')},
+    {label:'Thuis',     items:WORKOUTS.filter(w=>w.loc==='thuis')}
+  ];
+  el.innerHTML = groups.map(g=>
+    '<div class="section-label" style="margin-top:4px">'+g.label+'</div>'+
+    g.items.map(w=>{
+      const last = state.sessions.find(s=>s.wid===w.id);
+      const meta = last ? 'laatst '+last.date : 'nog niet gedaan';
+      const isNext = w.id===nxt.id;
+      return '<div class="wo-card" style="margin-bottom:8px'+(isNext?';border-color:rgba(200,242,64,.4)':'')+'" onclick="startWorkout(\''+w.id+'\')">'+
+        '<div class="wo-icon">'+w.icon+'</div>'+
+        '<div class="wo-info"><div class="wo-name">'+esc(w.name.replace('Basic Fit — ','').replace('Thuis — ',''))+
+          (isNext?' <span class="today-tag">NU</span>':'')+'</div>'+
+          '<div class="wo-meta">'+esc(w.focus)+' · '+meta+'</div></div>'+
+        '<span class="wo-go">›</span></div>';
+    }).join('')
+  ).join('')+
+  '<div class="note-box" style="margin-bottom:4px">Het Basic Fit-schema is een <b>startvoorstel</b>. Pas het aan naar de toestellen die jij daar gebruikt — vraag het gerust aan Claude.</div>';
+}
+
+function startWorkout(wid){
+  if(state.draft && state.draft.wid!==wid){
+    if(!confirm('Je hebt nog een sessie openstaan. Die weggooien en deze starten?')) return;
+  }
+  if(!state.draft || state.draft.wid!==wid){
+    state.draft = {wid:wid, started:Date.now(), sets:[]};
+    save();
+  }
+  renderTraining();
+  updateHome();
+  document.getElementById('page-training').scrollTop = 0;
+}
+
+function renderActiveSession(){
+  const el = document.getElementById('active-session');
+  if(!state.draft){ el.innerHTML=''; return; }
+  const w = WO[state.draft.wid];
+  if(!w){ state.draft=null; save(); el.innerHTML=''; return; }
+
+  const rows = w.exercises.map((ex,i)=>{
+    const prev = lastFor(ex.name);
+    const pr   = bestFor(ex.name);
+    const mine = state.draft.sets.map((s,idx)=>({s:s,idx:idx})).filter(o=>o.s.ex===ex.name);
+
+    let prevLine;
+    if(prev){
+      const val = ex.w ? prev.kg+' kg × '+prev.reps : prev.reps+' reps';
+      prevLine = '<div class="prev-line">Vorige keer <span class="prev-val">'+val+'</span>'+
+        '<span style="color:var(--text3)">'+prev.date+'</span>'+
+        (pr && ((ex.w && pr.kg>prev.kg) || (!ex.w && pr.reps>prev.reps))
+          ? '<span class="pr-tag">PR '+(ex.w?pr.kg+' kg × '+pr.reps:pr.reps)+'</span>' : '')+'</div>';
+    } else {
+      prevLine = '<div class="prev-line" style="color:var(--text3)">Eerste keer — dit wordt je startpunt</div>';
+    }
+
+    const kgField = ex.w
+      ? '<input class="input-field" id="in-kg-'+i+'" type="number" inputmode="decimal" step="0.5" min="0" max="500" placeholder="kg" style="width:78px;flex:none" value="'+(prev?prev.kg||'':'')+'">'
+      : '';
+    const pills = mine.map(o=>{
+      const beat = beatsPrev(o.s, prev, ex.w);
+      const txt  = ex.w ? o.s.kg+'×'+o.s.reps : o.s.reps;
+      return '<span class="set-pill'+(beat?' beat':'')+'">'+(beat?'▲ ':'')+txt+
+        '<button class="del-btn" style="font-size:12px;padding:0 0 0 2px;line-height:1" onclick="removeSet('+o.idx+')">×</button></span>';
+    }).join('');
+
+    return '<div class="sess-ex">'+
+      '<div class="sess-ex-head"><span class="sess-ex-name">'+esc(ex.name)+'</span>'+
+        '<span class="sess-ex-target">'+ex.sets+' × '+esc(ex.reps)+'</span></div>'+
+      prevLine+
+      '<div class="set-inputs">'+kgField+
+        '<input class="input-field" id="in-reps-'+i+'" type="number" inputmode="numeric" min="1" max="500" placeholder="reps" style="width:78px;flex:none" value="'+(prev?prev.reps:'')+'">'+
+        '<button class="btn-set" onclick="logSet('+i+')">+ set</button>'+
+        '<span style="flex:1;text-align:right;font-size:11px;color:var(--text3)">'+mine.length+'/'+ex.sets+'</span>'+
+      '</div>'+
+      (pills ? '<div class="set-pills">'+pills+'</div>' : '')+
+    '</div>';
+  }).join('');
+
+  const nSets = state.draft.sets.length;
+  const vol   = state.draft.sets.reduce((t,x)=>t+((x.kg||0)*x.reps),0);
+  const mins  = Math.max(1, Math.round((Date.now()-state.draft.started)/60000));
+
+  el.innerHTML =
+    '<div class="card" style="border-color:rgba(200,242,64,.3)">'+
+      '<div class="row-between" style="margin-bottom:4px">'+
+        '<div><div style="font-size:15px;font-weight:600">'+esc(w.name)+'</div>'+
+        '<div style="font-size:11px;color:var(--text2);margin-top:2px">'+nSets+' sets · '+
+          Math.round(vol).toLocaleString('nl-BE')+' kg volume · '+mins+' min</div></div>'+
+        '<span class="badge badge-orange">bezig</span></div>'+
+      (w.hint?'<div class="note-box" style="margin:10px 0 2px">'+esc(w.hint)+'</div>':'')+
+      '<div style="margin-top:8px">'+rows+'</div>'+
+      '<div class="sess-bar">'+
+        '<button class="btn-primary" onclick="finishSession()">Sessie afronden ✓</button>'+
+        '<button class="btn-primary" style="margin-top:8px;background:transparent;color:var(--text3);font-weight:500;font-size:13px" onclick="cancelSession()">Annuleren</button>'+
+      '</div>'+
+    '</div>';
+}
+
+function logSet(i){
+  const w  = WO[state.draft.wid];
+  const ex = w.exercises[i];
+  const repsEl = document.getElementById('in-reps-'+i);
+  const reps = parseInt(repsEl.value);
+  if(!reps || reps<1){ repsEl.focus(); return; }
+  let kg = 0;
+  if(ex.w){
+    const kgEl = document.getElementById('in-kg-'+i);
+    kg = parseFloat(kgEl.value);
+    if(isNaN(kg) || kg<0){ kgEl.focus(); return; }
+  }
+  const prev = lastFor(ex.name);
+  const set  = {ex:ex.name, kg:kg, reps:reps, w:!!ex.w, ts:Date.now()};
+  state.draft.sets.push(set);
+  save();
+  renderActiveSession();
+  if(beatsPrev(set, prev, ex.w)) showToast('Beter dan vorige keer 🔥');
+  else showToast('Set gelogd');
+}
+
+function removeSet(idx){
+  state.draft.sets.splice(idx,1);
+  save();
+  renderActiveSession();
+}
+
+function finishSession(){
+  const d = state.draft;
+  if(!d) return;
+  if(!d.sets.length){
+    if(!confirm('Geen sets gelogd. Sessie toch als gedaan afronden?')) return;
+  }
+  const w = WO[d.wid];
+  state.sessions.unshift({
+    ts:d.started, date:todayStr(), week:getCurrentWeekKey(),
+    wid:d.wid, name:w.name, loc:w.loc, sets:d.sets,
+    mins: Math.max(1, Math.round((Date.now()-d.started)/60000))
+  });
+  if(state.sessions.length>500) state.sessions.pop();
+  const vol = d.sets.reduce((t,x)=>t+((x.kg||0)*x.reps),0);
+  state.draft = null;
+  save();
+  renderTraining();
+  updateHome();
+  renderHistorie();
+  showToast(vol ? 'Sessie klaar — '+Math.round(vol).toLocaleString('nl-BE')+' kg 💪' : 'Sessie klaar 💪');
+}
+
+function cancelSession(){
+  if(!confirm('Sessie annuleren? Je gelogde sets gaan verloren.')) return;
+  state.draft = null;
+  save();
+  renderTraining();
+  updateHome();
+}
+
+function deleteSession(i){
+  if(!confirm('Deze sessie verwijderen?')) return;
+  state.sessions.splice(i,1);
+  save();
+  renderHistorie();
+  updateHome();
+}
+
+// ── ROEIER ────────────────────────────────────────────────────────
+function logRow(){
+  const el = document.getElementById('inp-row-km');
+  const v  = parseFloat(el.value);
+  if(!v || v<0.1 || v>30) return;
+  state.rowLog.unshift({km:v, date:todayStr(), week:getCurrentWeekKey()});
+  if(state.rowLog.length>300) state.rowLog.pop();
+  save();
+  el.value='';
+  renderRowSection();
+  updateHome();
+  showToast(v.toFixed(1)+' km geroeid!');
+}
+function deleteRow(i){ state.rowLog.splice(i,1); save(); renderRowSection(); renderHistRoeier(); updateHome(); }
+
+let _editRow = -1;
+function startRowEdit(i){ _editRow=i; renderHistRoeier(); setTimeout(()=>{ const el=document.getElementById('row-edit-input'); if(el){el.focus();el.select();} },30); }
+function cancelRowEdit(){ _editRow=-1; renderHistRoeier(); }
+function saveRowEdit(i){
+  const el=document.getElementById('row-edit-input');
+  if(el){ const v=parseFloat(el.value); if(v>0) state.rowLog[i].km=v; }
+  _editRow=-1; save(); renderRowSection(); renderHistRoeier(); updateHome();
+}
+
+function renderRowSection(){
+  const week  = getCurrentWeekKey();
+  const goal  = state.goals.rowKm || 12;
+  const total = getWeekRowKm(week);
+  const pct   = goal ? Math.min(100, total/goal*100) : 0;
+  document.getElementById('row-week-label').textContent = total.toFixed(1)+' / '+goal+' km';
+  document.getElementById('row-week-pbar').style.width  = pct+'%';
+
+  const recentEl = document.getElementById('row-recent');
+  const recent = state.rowLog.slice(0,6);
+  recentEl.innerHTML = recent.length
+    ? recent.map((e,i)=>'<div class="row-item"><span style="font-size:12px;color:var(--text2)">'+e.date+'</span>'+
+        '<span class="row-km">'+e.km.toFixed(1)+' km</span>'+
+        '<button class="del-btn" onclick="deleteRow('+i+')">×</button></div>').join('')
+    : '<div style="font-size:13px;color:var(--text3);padding:4px 0">Nog geen sessies gelogd</div>';
+
+  const weeks = [...new Set(state.rowLog.map(e=>e.week))]
+    .filter(w=>w!==week).sort((a,b)=>weekKeyToNum(b)-weekKeyToNum(a)).slice(0,8);
+  const wrap = document.getElementById('row-history-wrap');
+  const hist = document.getElementById('row-history');
+  if(!weeks.length){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  hist.innerHTML = weeks.map(w=>{
+    const km = getWeekRowKm(w);
+    const p  = goal ? Math.min(100, km/goal*100) : 0;
+    return '<div class="hist-row"><span style="font-size:11px;color:var(--text3);min-width:48px">'+weekKeyToDate(w)+'</span>'+
+      '<div style="flex:1;margin:0 8px"><div class="pbar-wrap"><div class="pbar" style="background:var(--blue);width:'+p+'%"></div></div></div>'+
+      '<span style="font-size:12px;font-family:\'DM Mono\',monospace;color:var(--blue);min-width:44px;text-align:right">'+km.toFixed(1)+' km</span></div>';
+  }).join('');
+}
+let activeTab = 'mealprep';
+function switchTab(t){
+  activeTab = t;
+  document.querySelectorAll('.tab').forEach((b,i)=>{
+    const tabs=['mealprep','avond','boodschappen'];
+    b.classList.toggle('active', tabs[i]===t);
+  });
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+}
+
+function renderRecipe(r, prefix, idx){
+  const id = prefix+'_'+idx;
+  return `<div class="meal-card" id="${id}">
+    <div class="meal-head" onclick="toggleMeal('${id}')">
+      <div class="meal-icon">${r.icon}</div>
+      <div class="meal-info">
+        <div class="meal-title">${r.title}</div>
+        <div class="meal-meta">${r.time}${r.portions?' · '+r.portions:''} · ${r.macros}</div>
+      </div>
+      <span class="day-chevron">›</span>
+    </div>
+    <div class="meal-body">
+      <div class="section-label" style="margin-top:10px">Ingrediënten</div>
+      ${r.ingredients.map(([n,a])=>`<div class="ing-row"><span>${n}</span>${a?`<span class="ing-amt">${a}</span>`:''}</div>`).join('')}
+      <div class="section-label" style="margin-top:12px">Bereiding</div>
+      ${r.steps.map((s,i)=>`<div class="step-row"><span class="step-num">${i+1}</span><span>${s}</span></div>`).join('')}
+      ${r.tip?`<div class="tip-row">💡 ${r.tip}</div>`:''}
+    </div>
+  </div>`;
+}
+
+function toggleMeal(id){
+  document.getElementById(id).classList.toggle('open');
+}
+
+function renderVoeding(){
+  document.getElementById('tab-mealprep').innerHTML = MEALPREP.map((r,i)=>renderRecipe(r,'mp',i)).join('');
+  document.getElementById('tab-avond').innerHTML = AVOND.map((r,i)=>renderRecipe(r,'av',i)).join('');
+  renderGrocery();
+}
+
+function getIngCat(name){
+  const n = name.toLowerCase();
+  if(/kipfilet|kipgehakt|kalkoen|zalm|tonijn|chorizo|gehakt|rundergehakt/.test(n)) return 'Vlees & vis';
+  if(/\bei\b|eierdooier|ricotta|parmezaan|feta|mozzarella|kaas|yoghurt|kwark|skyr|melk|roomkaas/.test(n)) return 'Zuivel & eieren';
+  if(/pasta|penne|fusilli|spaghetti|tagliatelle|macaroni|linguine|rigatoni|rijst|couscous|quinoa|brood|wrap|havermout/.test(n)) return 'Granen & pasta';
+  if(/spinazie|paprika|courgette|aubergine|broccoli|tomaat|komkommer|rode ui|gele ui|\bui\b|knoflook|wortel|selderij|citroen|limoen|avocado|sla|rucola|aardappel|banaan|bessen|mais/.test(n)) return 'Groenten & fruit';
+  if(/passata|kikkererwten|bonen|pindakaas|sojasaus|noten|honing|kappert|hummus|blik|zongedroogde/.test(n)) return 'Blik & droog';
+  return 'Kruiden & oliën';
+}
+
+function getRecipeByKey(key){
+  const[type,idx]=key.split('_');
+  if(type==='mp') return MEALPREP[parseInt(idx)];
+  if(type==='av') return AVOND[parseInt(idx)];
+  return null;
+}
+
+function toggleRecipe(key){
+  const idx = state.selectedRecipes.indexOf(key);
+  if(idx>-1) state.selectedRecipes.splice(idx,1);
+  else state.selectedRecipes.push(key);
+  save();
+  renderGrocery();
+}
+
+function renderGrocery(){
+  const container = document.getElementById('tab-boodschappen');
+  const CAT_ORDER = ['Vlees & vis','Zuivel & eieren','Granen & pasta','Groenten & fruit','Blik & droog','Kruiden & oliën'];
+
+  const mpChips = MEALPREP.map((r,i)=>{
+    const key='mp_'+i, sel=state.selectedRecipes.includes(key);
+    return `<button class="recipe-chip${sel?' active':''}" onclick="toggleRecipe('${key}')">${r.icon} ${r.title.split(' ').slice(0,3).join(' ')}</button>`;
+  }).join('');
+  const avChips = AVOND.map((r,i)=>{
+    const key='av_'+i, sel=state.selectedRecipes.includes(key);
+    return `<button class="recipe-chip${sel?' active':''}" onclick="toggleRecipe('${key}')">${r.icon} ${r.title.split(' ').slice(0,3).join(' ')}</button>`;
+  }).join('');
+
+  let html = `<div class="card">
+    <div class="section-label">Kies je recepten</div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Mealprep</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${mpChips}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Avond</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${avChips}</div>
+    </div>
+  </div>`;
+
+  if(!state.selectedRecipes.length){
+    html += `<div class="empty-state"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Tik op een recept om je boodschappenlijst te genereren</div>`;
+    container.innerHTML = html;
+    return;
+  }
+
+  // Build consolidated ingredient map
+  const itemMap = {};
+  state.selectedRecipes.forEach(key=>{
+    const recipe = getRecipeByKey(key);
+    if(!recipe) return;
+    recipe.ingredients.forEach(([name,amt])=>{
+      if(!name||!name.trim()) return;
+      const norm = name.toLowerCase().trim();
+      if(!itemMap[norm]) itemMap[norm]={name, cat:getIngCat(name), amounts:[], recipes:[]};
+      if(amt) itemMap[norm].amounts.push(amt);
+      const short = recipe.title.split(' ').slice(0,2).join(' ');
+      if(!itemMap[norm].recipes.includes(short)) itemMap[norm].recipes.push(short);
+    });
+  });
+
+  const allItems = Object.values(itemMap);
+  const total = allItems.length;
+  const done = allItems.filter(it=>state.groceryDone[it.name.toLowerCase().trim()]).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  html += `<div class="card">
+    <div class="row-between" style="margin-bottom:8px">
+      <span style="font-size:13px;color:var(--text2)">${done} van ${total} afgevinkt</span>
+      <button class="grocery-reset" onclick="resetGrocery()">Alles resetten</button>
+    </div>
+    <div class="pbar-wrap"><div class="pbar" style="width:${pct}%"></div></div>
+  </div>`;
+
+  const grouped = {};
+  CAT_ORDER.forEach(c=>grouped[c]=[]);
+  allItems.forEach(it=>{ (grouped[it.cat]||(grouped['Kruiden & oliën'])).push(it); });
+
+  CAT_ORDER.forEach(cat=>{
+    if(!grouped[cat]||!grouped[cat].length) return;
+    html += `<div class="card"><div class="section-label">${cat}</div>
+      ${grouped[cat].map(it=>{
+        const norm=it.name.toLowerCase().trim();
+        const checked=state.groceryDone[norm];
+        const amt=it.amounts.length?it.amounts.join(' + '):'';
+        return `<div class="check-item${checked?' done':''}" onclick="toggleGrocery('${norm.replace(/'/g,"\\'")}',this)">
+          <div class="check-box"><svg class="check-tick" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="ci-name">${it.name}</span>
+          ${amt?`<span class="ci-qty">${amt}</span>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleGrocery(name, el){
+  state.groceryDone[name] = !state.groceryDone[name];
+  save();
+  renderGrocery();
+}
+
+function resetGrocery(){
+  state.groceryDone = {};
+  save();
+  renderGrocery();
+}
+
+// ── PROFIEL ────────────────────────────────────────────────────────
+function saveProfile(){
+  const naam = document.getElementById('inp-naam').value.trim();
+  const gew = parseFloat(document.getElementById('inp-gewicht').value);
+  const len = parseFloat(document.getElementById('inp-lengte').value);
+  const goal = parseFloat(document.getElementById('inp-row-goal').value);
+  state.profile = {naam, gewicht:gew||null, lengte:len||null};
+  if(goal && goal>0) state.rowGoal = goal;
+  save();
+  if(gew) logWeightSilent(gew);
+  updateBMI();
+  updateHome();
+  showToast('Opgeslagen!');
+}
+
+function updateBMI(){
+  const p = state.profile;
+  const section = document.getElementById('bmi-section');
+  if(p.lengte && state.weightLog.length){
+    const w = state.weightLog[0].w;
+    const h = p.lengte/100;
+    const bmi = w/(h*h);
+    document.getElementById('bmi-val').textContent = bmi.toFixed(1);
+    let cat,sub,col;
+    if(bmi<18.5){cat='Ondergewicht';sub='Streef naar meer calorieën';col='var(--blue)'}
+    else if(bmi<25){cat='Normaal gewicht';sub='Goed bezig! Blijf zo.';col='var(--accent)'}
+    else if(bmi<30){cat='Overgewicht';sub='Training + voeding helpen';col='var(--orange)'}
+    else{cat='Obesitas';sub='Raadpleeg een arts';col='var(--red)'}
+    document.getElementById('bmi-cat').textContent=cat;
+    document.getElementById('bmi-cat').style.color=col;
+    document.getElementById('bmi-sub').textContent=sub;
+    document.getElementById('bmi-circle').style.borderColor=col;
+    document.getElementById('bmi-val').style.color=col;
+    section.style.display='block';
+  } else {
+    section.style.display='none';
+  }
+}
+
+function logWeight(){
+  const v = parseFloat(document.getElementById('inp-log-weight').value);
+  if(!v||v<30||v>300) return;
+  logWeightSilent(v);
+  document.getElementById('inp-log-weight').value='';
+}
+
+function logWeightSilent(v){
+  const today = new Date().toLocaleDateString('nl-BE',{day:'2-digit',month:'2-digit',year:'numeric'});
+  state.weightLog.unshift({w:v, date:today});
+  if(state.weightLog.length>20) state.weightLog.pop();
+  save();
+  renderWeightLog();
+  updateBMI();
+  updateHome();
+}
+
+function deleteWeight(i){
+  state.weightLog.splice(i,1);
+  save();
+  renderWeightLog();
+  updateBMI();
+  updateHome();
+}
+
+function renderWeightLog(){
+  const list = document.getElementById('weight-list');
+  if(!state.weightLog.length){ list.innerHTML='<div class="empty-state" style="padding:16px">Nog geen metingen</div>'; return; }
+  list.innerHTML = state.weightLog.map((e,i)=>{
+    let diffHtml='';
+    if(i<state.weightLog.length-1){
+      const diff = e.w - state.weightLog[i+1].w;
+      const cls = diff>0?'up':diff<0?'down':'same';
+      const sign = diff>0?'+':'';
+      diffHtml = `<span class="w-diff ${cls}">${sign}${diff.toFixed(1)}</span>`;
+    }
+    return `<div class="weight-entry">
+      <span class="w-date">${e.date}</span>
+      <span class="w-val">${e.w.toFixed(1)} kg</span>
+      ${diffHtml}
+      <button class="del-btn" onclick="deleteWeight(${i})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function loadProfile(){
+  const p = state.profile;
+  if(p.naam) document.getElementById('inp-naam').value = p.naam;
+  if(p.gewicht) document.getElementById('inp-gewicht').value = p.gewicht;
+  if(p.lengte) document.getElementById('inp-lengte').value = p.lengte;
+  document.getElementById('inp-row-goal').value = state.rowGoal||12;
+  renderWeightLog();
+  updateBMI();
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────
+function showToast(msg){
+  let t = document.getElementById('toast');
+  if(!t){ t=document.createElement('div'); t.id='toast';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--accent);color:#0f0f0f;font-size:13px;font-weight:600;padding:8px 18px;border-radius:999px;z-index:999;transition:opacity .3s';
+    document.body.appendChild(t); }
+  t.textContent=msg; t.style.opacity='1';
+  setTimeout(()=>t.style.opacity='0',1800);
+}
+
+
+// ── PROFIEL & DOELEN (vervangt de versies hierboven) ───────────────
+function saveProfile(){
+  const naam = document.getElementById('inp-naam').value.trim();
+  const gew  = parseFloat(document.getElementById('inp-gewicht').value);
+  const len  = parseFloat(document.getElementById('inp-lengte').value);
+  state.profile = {naam:naam, gewicht:gew||null, lengte:len||null};
+  save();
+  if(gew) logWeightSilent(gew);
+  updateBMI();
+  updateHome();
+  showToast('Opgeslagen!');
+}
+
+function saveGoals(){
+  const g  = parseInt(document.getElementById('inp-goal-gym').value);
+  const t  = parseInt(document.getElementById('inp-goal-thuis').value);
+  const km = parseFloat(document.getElementById('inp-row-goal').value);
+  const ei = parseInt(document.getElementById('inp-goal-eiwit').value);
+  if(g>0)            state.goals.gym   = g;
+  if(t>=0 && !isNaN(t)) state.goals.thuis = t;
+  if(km>=0 && !isNaN(km)){ state.goals.rowKm = km; state.rowGoal = km; }
+  if(ei>0)           state.goals.eiwit = ei;
+  save();
+  updateHome();
+  renderRowSection();
+  showToast('Doelen opgeslagen!');
+}
+
+function loadProfile(){
+  const p = state.profile;
+  if(p.naam)    document.getElementById('inp-naam').value    = p.naam;
+  if(p.gewicht) document.getElementById('inp-gewicht').value = p.gewicht;
+  if(p.lengte)  document.getElementById('inp-lengte').value  = p.lengte;
+  document.getElementById('inp-goal-gym').value   = state.goals.gym;
+  document.getElementById('inp-goal-thuis').value = state.goals.thuis;
+  document.getElementById('inp-row-goal').value   = state.goals.rowKm;
+  document.getElementById('inp-goal-eiwit').value = state.goals.eiwit;
+  document.getElementById('app-version').textContent = APP_VERSION;
+  renderWeightLog();
+  updateBMI();
+}
+
+// ── DATA BACKUP ───────────────────────────────────────────────────
+function exportData(){
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'studiorobson-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Data geëxporteerd!');
+}
+function importData(){ document.getElementById('import-file').click(); }
+function doImport(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const imp = JSON.parse(e.target.result);
+      if(imp.trainDone===undefined && imp.sessions===undefined){ showToast('Ongeldig backup bestand'); return; }
+      if(!confirm('Je huidige data wordt vervangen door de backup. Doorgaan?')) return;
+      Object.assign(state, imp);
+      if(!state.sessions) state.sessions = [];
+      if(!state.goals)    state.goals = {gym:3, thuis:2, eiwit:165, rowKm:state.rowGoal||12};
+      if(state.goals.rowKm==null) state.goals.rowKm = state.rowGoal||12;
+      save();
+      loadProfile(); renderTraining(); renderVoeding(); updateHome(); renderHistorie();
+      showToast('Data geïmporteerd ✓');
+    } catch(err){ showToast('Fout bij importeren'); }
+  };
+  reader.readAsText(file);
+  event.target.value='';
+}
+
+// ── HISTORIE ──────────────────────────────────────────────────────
+function switchHistTab(t){
+  document.querySelectorAll('#page-historie .tab').forEach((b,i)=>{
+    b.classList.toggle('active',['training','kracht','roeier'][i]===t);
+  });
+  document.querySelectorAll('#page-historie .tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('htab-'+t).classList.add('active');
+}
+function renderHistorie(){ renderHistTraining(); renderHistKracht(); renderHistRoeier(); }
+
+function renderHistTraining(){
+  const el = document.getElementById('htab-training');
+  if(!el) return;
+  const cur   = getCurrentWeekKey();
+  const weeks = allWeeks().slice(0,16);
+  const goal  = state.goals.gym;
+
+  const weekRows = weeks.map(w=>{
+    const st    = weekStats(w);
+    const isCur = w===cur;
+    const col   = st.gym>=goal ? 'var(--accent)' : st.gym>=Math.max(1,goal-1) ? 'var(--orange)' : 'var(--text3)';
+    const dots  = Array.from({length:Math.max(goal, st.gym)},(_,i)=>
+      '<div class="goal-dot'+(i<st.gym?' done':'')+'"></div>').join('');
+    return '<div class="card-sm" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
+      '<span style="font-size:11px;color:'+(isCur?'var(--accent)':'var(--text3)')+';min-width:52px;font-weight:'+(isCur?700:400)+'">'+
+        weekKeyToDate(w)+(isCur?' ◉':'')+'</span>'+
+      '<div class="goal-dots">'+dots+'</div>'+
+      '<span style="font-size:13px;font-weight:700;font-family:\'DM Mono\',monospace;color:'+col+'">'+st.gym+'/'+goal+'</span>'+
+      '<div style="flex:1;text-align:right;font-size:11px;color:var(--text2)">'+
+        (st.thuis?'🏠 '+st.thuis+' ':'')+(st.rowKm?'🚣 '+st.rowKm.toFixed(1)+'km ':'')+
+        (st.volume?'<span style="color:var(--accent);font-family:\'DM Mono\',monospace">'+Math.round(st.volume).toLocaleString('nl-BE')+' kg</span>':'')+
+      '</div></div>';
+  }).join('');
+
+  const past = weeks.filter(w=>w!==cur);
+  const halen = past.filter(w=>weekStats(w).gym>=goal).length;
+  const totVol = state.sessions.reduce((t,s)=>t+sessionVolume(s),0);
+
+  const list = state.sessions.slice(0,20).map((s,i)=>{
+    const vol = sessionVolume(s);
+    return '<div class="card-sm" style="display:flex;align-items:center;gap:10px">'+
+      '<div class="wo-icon" style="width:30px;height:30px;font-size:14px">'+(s.loc==='gym'?'🏋️':'🏠')+'</div>'+
+      '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+esc(s.name)+'</div>'+
+      '<div style="font-size:11px;color:var(--text2)">'+s.date+' · '+(s.sets?s.sets.length:0)+' sets'+
+        (vol?' · '+Math.round(vol).toLocaleString('nl-BE')+' kg':'')+'</div></div>'+
+      '<button class="del-btn" onclick="deleteSession('+i+')">×</button></div>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="stats-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px">'+
+      '<div class="stat-card"><div class="stat-val" style="font-size:20px">'+calcStreak().streak+'</div><div class="stat-lbl">🔥 Streak</div></div>'+
+      '<div class="stat-card"><div class="stat-val" style="font-size:20px">'+halen+'</div><div class="stat-lbl">Weken doel ✓</div></div>'+
+      '<div class="stat-card"><div class="stat-val" style="font-size:20px">'+state.sessions.length+'</div><div class="stat-lbl">Sessies</div></div>'+
+    '</div>'+
+    (totVol?'<div class="card-sm" style="text-align:center"><span style="font-size:12px;color:var(--text2)">Totaal getild: </span>'+
+      '<span style="font-size:15px;font-weight:700;font-family:\'DM Mono\',monospace;color:var(--accent)">'+Math.round(totVol).toLocaleString('nl-BE')+' kg</span></div>':'')+
+    '<div class="section-label" style="margin-top:4px">Per week</div>'+weekRows+
+    (list?'<div class="section-label" style="margin-top:8px">Sessies</div>'+list:'');
+}
+
+function renderHistKracht(){
+  const el = document.getElementById('htab-kracht');
+  if(!el) return;
+
+  // per oefening: beste set per sessie, nieuwste eerst
+  const byEx = {};
+  state.sessions.forEach(s=>{
+    const seen = {};
+    (s.sets||[]).forEach(x=>{
+      if(!byEx[x.ex]) byEx[x.ex] = {w:!!x.w, entries:[], allSets:0};
+      byEx[x.ex].allSets++;
+      const cur = seen[x.ex];
+      if(!cur || (x.kg||0)>(cur.kg||0) || ((x.kg||0)===(cur.kg||0) && x.reps>cur.reps)){
+        seen[x.ex] = {kg:x.kg||0, reps:x.reps, date:s.date, ts:s.ts};
+      }
+    });
+    Object.keys(seen).forEach(ex=>byEx[ex].entries.push(seen[ex]));
+  });
+
+  const names = Object.keys(byEx);
+  if(!names.length && !state.repLog.length){
+    el.innerHTML = '<div class="empty-state">Nog geen krachtdata — rond je eerste sessie af.</div>';
+    return;
+  }
+
+  const cards = names.sort().map(ex=>{
+    const d  = byEx[ex];
+    const en = d.entries;                       // nieuwste eerst
+    const pr = bestFor(ex);
+    const chron = en.slice(0,12).reverse();     // oud → nieuw
+    const vals  = chron.map(e=>d.w ? e.kg : e.reps);
+    const mx    = Math.max.apply(null, vals);
+    const mn    = Math.min.apply(null, vals);
+    // nulpunt net onder het laagste resultaat: zo zie je de progressie echt
+    const base  = mx===mn ? 0 : Math.max(0, mn - (mx-mn)*0.45);
+    const bars  = chron.map((e,i)=>{
+      const v = d.w ? e.kg : e.reps;
+      const h = mx===base ? 20 : Math.max(5, Math.round(8 + (v-base)/(mx-base)*28));
+      return '<div style="flex:1;max-width:30px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px">'+
+        '<span style="font-size:8px;color:var(--text3);font-family:\'DM Mono\',monospace">'+v+'</span>'+
+        '<div class="mini-bar'+(i===chron.length-1?' last':'')+'" style="height:'+h+'px"></div></div>';
+    }).join('');
+
+    const first = chron[0], last = chron[chron.length-1];
+    let trend = '';
+    if(first && last && chron.length>1){
+      const dv = (d.w?last.kg:last.reps) - (d.w?first.kg:first.reps);
+      if(dv!==0) trend = '<span style="font-size:11px;color:'+(dv>0?'var(--accent)':'var(--red)')+'">'+
+        (dv>0?'▲ +':'▼ ')+Math.abs(dv)+(d.w?' kg':' reps')+'</span>';
+    }
+    const recent = en.slice(0,6).map(e=>
+      '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)">'+
+      '<span style="font-size:11px;color:var(--text3)">'+e.date+'</span>'+
+      '<span style="font-size:13px;font-weight:600;font-family:\'DM Mono\',monospace;color:var(--accent)">'+
+        (d.w ? e.kg+' kg × '+e.reps : e.reps+' reps')+'</span></div>').join('');
+
+    return '<div class="card">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:10px">'+
+        '<div style="min-width:0"><div style="font-size:14px;font-weight:600">'+esc(ex)+'</div>'+
+        '<div style="font-size:11px;color:var(--text2);margin-top:2px">'+en.length+(en.length===1?' sessie':' sessies')+' · '+d.allSets+(d.allSets===1?' set ':' sets ')+trend+'</div></div>'+
+        '<div style="text-align:right;flex-shrink:0"><div style="font-size:17px;font-weight:700;font-family:\'DM Mono\',monospace;color:var(--accent)">'+
+          (d.w ? pr.kg+' kg' : pr.reps)+'</div><div style="font-size:10px;color:var(--text2)">🏆 '+(d.w?'× '+pr.reps:'reps')+'</div></div></div>'+
+      (chron.length>=3 ? '<div class="mini-bars" style="margin-bottom:10px">'+bars+'</div>' : '')+recent+'</div>';
+  }).join('');
+
+  let legacy = '';
+  if(state.repLog.length){
+    const exs = [...new Set(state.repLog.map(e=>e.ex))];
+    legacy = '<div class="section-label" style="margin-top:8px">Archief — losse reps (oude app)</div>'+
+      exs.map(ex=>{
+        const en = state.repLog.filter(e=>e.ex===ex);
+        const pr = Math.max.apply(null, en.map(e=>e.reps));
+        return '<div class="card-sm" style="display:flex;align-items:center;justify-content:space-between">'+
+          '<span style="font-size:13px">'+esc(ex)+'</span>'+
+          '<span style="font-size:12px;color:var(--text2)">'+en.length+' sets · PR '+
+          '<span style="font-family:\'DM Mono\',monospace;color:var(--accent)">'+pr+'</span></span></div>';
+      }).join('');
+  }
+  el.innerHTML = cards + legacy;
+}
+
+function renderHistRoeier(){
+  const el = document.getElementById('htab-roeier');
+  if(!el) return;
+  if(!state.rowLog.length){ el.innerHTML='<div class="empty-state">Nog geen roeierdata</div>'; return; }
+  const goal   = state.goals.rowKm || 12;
+  const totaal = state.rowLog.reduce((s,e)=>s+e.km,0);
+  const weeks  = [...new Set(state.rowLog.map(e=>e.week))].sort((a,b)=>weekKeyToNum(b)-weekKeyToNum(a));
+
+  const weekRows = weeks.map(w=>{
+    const km  = getWeekRowKm(w);
+    const pct = goal ? Math.min(100, km/goal*100) : 0;
+    const col = km>=goal ? 'var(--accent)' : km>=goal*.6 ? 'var(--orange)' : 'var(--blue)';
+    return '<div class="hist-row"><span style="font-size:11px;color:var(--text3);min-width:52px">'+weekKeyToDate(w)+'</span>'+
+      '<div style="flex:1;margin:0 8px"><div class="pbar-wrap"><div class="pbar" style="background:'+col+';width:'+pct+'%"></div></div></div>'+
+      '<span style="font-size:12px;font-weight:600;font-family:\'DM Mono\',monospace;color:'+col+';min-width:44px;text-align:right">'+km.toFixed(1)+' km</span></div>';
+  }).join('');
+
+  const sessions = state.rowLog.map((e,i)=>{
+    if(_editRow===i) return '<div class="row-item"><span style="font-size:12px;color:var(--text2)">'+e.date+'</span>'+
+      '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:3px 8px">'+
+      '<input id="row-edit-input" type="number" inputmode="decimal" value="'+e.km+'" step="0.1" style="width:44px;background:none;border:none;color:var(--text);font-family:\'DM Mono\',monospace;font-size:12px;outline:none;text-align:center">'+
+      '<button onclick="saveRowEdit('+i+')" style="color:var(--accent);font-size:14px;background:none;border:none;cursor:pointer;line-height:1">✓</button>'+
+      '<button onclick="cancelRowEdit()" style="color:var(--text3);font-size:14px;background:none;border:none;cursor:pointer;line-height:1">✗</button></span></div>';
+    return '<div class="row-item"><span style="font-size:12px;color:var(--text2)">'+e.date+'</span>'+
+      '<span class="row-km">'+e.km.toFixed(1)+' km</span>'+
+      '<div style="display:flex;gap:4px">'+
+        '<button class="del-btn" style="font-size:11px" onclick="startRowEdit('+i+')">✏</button>'+
+        '<button class="del-btn" onclick="deleteRow('+i+')">×</button></div></div>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="stats-grid" style="grid-template-columns:1fr 1fr;gap:8px">'+
+      '<div class="stat-card"><div class="stat-val" style="color:var(--blue)">'+totaal.toFixed(1)+'</div><div class="stat-lbl">Totaal km</div></div>'+
+      '<div class="stat-card"><div class="stat-val">'+state.rowLog.length+'</div><div class="stat-lbl">Sessies</div></div>'+
+    '</div>'+
+    '<div class="card"><div class="section-label">Per week</div><div style="display:flex;flex-direction:column">'+weekRows+'</div></div>'+
+    '<div class="card"><div class="section-label">Alle sessies</div>'+sessions+'</div>';
+}
+
+// ── AUTO-UPDATE (service worker) ──────────────────────────────────
+let _swReg = null;
+function showUpdateBanner(){
+  const b = document.getElementById('upd-banner');
+  if(b) b.style.display = 'flex';
+}
+function applyUpdate(){
+  if(_swReg && _swReg.waiting) _swReg.waiting.postMessage({type:'SKIP_WAITING'});
+  else location.reload();
+}
+function checkForUpdate(){
+  if(!_swReg){ showToast('Updates niet beschikbaar'); return; }
+  showToast('Controleren...');
+  _swReg.update().then(()=>{
+    setTimeout(()=>{ if(!_swReg.waiting) showToast('Je hebt de nieuwste versie ✓'); }, 1200);
+  }).catch(()=>showToast('Geen verbinding'));
+}
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      _swReg = reg;
+      if(reg.waiting) showUpdateBanner();
+      reg.addEventListener('updatefound', ()=>{
+        const nw = reg.installing;
+        if(!nw) return;
+        nw.addEventListener('statechange', ()=>{
+          if(nw.state==='installed' && navigator.serviceWorker.controller) showUpdateBanner();
+        });
+      });
+    }).catch(()=>{});
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(reloaded) return; reloaded = true; location.reload();
+    });
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+renderTraining();
+renderVoeding();
+renderHistorie();
+loadProfile();
+updateHome();
+</script>
+</body>
+</html>

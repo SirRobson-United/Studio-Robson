@@ -1,0 +1,83 @@
+# Studio Robson
+
+Persoonlijke kracht- en hypertrofie-tracker. Installeerbare PWA, draait volledig
+in de browser, geen server en geen account. Alle data staat in `localStorage` op
+het toestel zelf.
+
+## Bestanden
+
+| Bestand | Rol |
+|---|---|
+| `index.html` | De hele app: markup, CSS en JS in één bestand |
+| `sw.js` | Service worker — offline gebruik en automatische updates |
+| `manifest.webmanifest` | Maakt "toevoegen aan beginscherm" een echte app |
+| `logo.png`, `icon-*.png`, `apple-touch-icon.png` | Beeldmateriaal |
+
+## Deployen
+
+GitHub Pages serveert de map zoals hij is — er is geen buildstap.
+
+```bash
+git add -A && git commit -m "beschrijving" && git push
+```
+
+Een minuut later staat de nieuwe versie live. Op de gsm komt hij binnen bij het
+eerstvolgende openen: de service worker haalt `index.html` altijd eerst van het
+netwerk, ziet de nieuwe versie, en toont de knop **Vernieuwen**.
+
+### Versienummer bij elke deploy ophogen
+
+Twee plekken, altijd hetzelfde nummer:
+
+- `index.html` → `const APP_VERSION = '2.0.0';`
+- `sw.js` → `const VERSION = '2.0.0';`
+
+Zonder die bump blijft de oude cache staan en ziet de gsm de wijziging niet.
+
+## Het trainingsschema aanpassen
+
+Alles zit in de `WORKOUTS`-array bovenaan het `<script>`-blok in `index.html`.
+De rest van de app (vorige-keer-geheugen, PR's, volume, historiek) leest daaruit
+en past zich vanzelf aan.
+
+```js
+{id:'gymA', name:'Basic Fit — Full body A', loc:'gym', icon:'🏋️', badge:'blue',
+ focus:'korte omschrijving',
+ exercises:[
+   {name:'Barbell squat', sets:3, reps:'8–10', w:true},   // w:true  = kg × reps
+   {name:'Pull-up',       sets:3, reps:'max',  w:false},  // w:false = alleen reps
+ ]}
+```
+
+- `loc: 'gym'` telt mee voor het Basic Fit-weekdoel, `'thuis'` voor het thuisdoel.
+- `id` nooit hergebruiken voor iets anders — gelogde sessies verwijzen ernaar.
+- Oefeningen hernoemen breekt de koppeling met eerder gelogde sets (die blijven
+  bestaan onder de oude naam, maar "vorige keer" begint opnieuw).
+
+## Datamodel (`localStorage`, key `fittrack`)
+
+```js
+{
+  sessions: [{ts, date, week, wid, name, loc, mins, sets:[{ex, kg, reps, w, ts}]}],
+  draft:    {wid, started, sets:[…]} | null,   // sessie die nu bezig is
+  goals:    {gym, thuis, rowKm, eiwit},
+  rowLog:   [{km, date, week}],
+  weightLog:[{w, date}],
+  profile:  {naam, gewicht, lengte},
+  groceryDone, selectedRecipes, bestStreak,
+  trainDone, repLog                            // archief van de oude app
+}
+```
+
+`trainDone` en `repLog` komen uit de vorige versie (vast weekschema, losse reps).
+Ze worden niet meer geschreven, alleen nog getoond in Historie en meegeteld in de
+weekstatistieken, zodat oude data niet verdwijnt.
+
+## Lokaal testen
+
+```bash
+node pad/naar/serve.js . 4173
+```
+
+Een service worker heeft `https` of `localhost` nodig — het bestand rechtstreeks
+openen met `file://` werkt dus niet voor de offline- en updatefuncties.
