@@ -1,6 +1,6 @@
 // Studio Robson — service worker
 // Bump VERSION bij elke deploy (zelfde nummer als APP_VERSION in index.html).
-const VERSION = '2.2.0';
+const VERSION = '2.2.1';
 const CACHE   = 'studio-robson-v' + VERSION;
 
 const SHELL = [
@@ -37,11 +37,14 @@ self.addEventListener('fetch', e=>{
   const url = new URL(req.url);
 
   // De app zelf: netwerk eerst, zodat een nieuwe versie meteen binnenkomt.
+  // GitHub Pages stuurt Cache-Control: max-age=600 mee op HTML. Zonder
+  // cache:'no-store' haalt deze fetch tot 10 minuten lang de oude versie uit
+  // de HTTP-cache van de browser en merk je een update dus te laat.
   const isShell = req.mode === 'navigate' ||
                   (url.origin === location.origin && url.pathname.endsWith('/index.html'));
   if(isShell){
     e.respondWith(
-      fetch(req)
+      fetch(new Request(req.url, {cache:'no-store'}))
         .then(res=>{
           const copy = res.clone();
           caches.open(CACHE).then(c=>c.put('./index.html', copy)).catch(()=>{});
