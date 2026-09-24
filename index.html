@@ -254,6 +254,16 @@ select.input-field{appearance:none;-webkit-appearance:none;background-image:url(
 .mini-bar.last{background:var(--accent)}
 .note-box{background:rgba(200,242,64,.05);border:1px solid rgba(200,242,64,.16);border-radius:var(--r2);padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.55}
 .note-box b{color:var(--accent);font-weight:600}
+/* Buitenscherm van een flipphone: weinig hoogte, dus merkkop en marges inkrimpen */
+@media (max-height:540px){
+  .studio-brand{display:none}
+  .page{padding:10px 12px;gap:10px}
+  .page-title{font-size:18px}
+  .card{padding:12px}
+  .nav{padding:5px 4px calc(6px + env(safe-area-inset-bottom))}
+  .nav-btn svg{width:19px;height:19px}
+  .nav-label{font-size:9px}
+}
 .upd-banner{position:fixed;left:50%;transform:translateX(-50%);bottom:76px;background:var(--accent);color:#0f0f0f;font-size:12.5px;font-weight:600;padding:7px 8px 7px 14px;border-radius:999px;z-index:998;display:none;align-items:center;gap:9px;white-space:nowrap;max-width:calc(100vw - 32px);box-shadow:0 4px 18px rgba(0,0,0,.5)}
 .upd-banner button{background:#0f0f0f;color:var(--accent);border:none;border-radius:999px;padding:4px 11px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
 </style>
@@ -490,6 +500,8 @@ select.input-field{appearance:none;-webkit-appearance:none;background-image:url(
           <button class="btn-primary" style="flex:1;font-size:13px" onclick="exportData()">↑ Exporteer</button>
           <button class="btn-primary" style="flex:1;font-size:13px;background:var(--bg3);color:var(--text)" onclick="importData()">↓ Importeer</button>
         </div>
+        <div id="persist-status" style="margin-top:12px;font-size:12px;display:flex;align-items:center;gap:7px"></div>
+        <button class="btn-primary" id="btn-persist" style="margin-top:10px;font-size:13px;background:var(--bg3);color:var(--text);display:none" onclick="askPersistence()">Opslag beveiligen</button>
       </div>
       <div class="card">
         <div class="section-label">Over deze app</div>
@@ -497,7 +509,8 @@ select.input-field{appearance:none;-webkit-appearance:none;background-image:url(
           Studio Robson — versie <span id="app-version" style="font-family:'DM Mono',monospace;color:var(--text)">—</span><br>
           Updates komen automatisch binnen wanneer je de app opent met internet.
         </div>
-        <button class="btn-primary" style="margin-top:10px;font-size:13px;background:var(--bg3);color:var(--text)" onclick="checkForUpdate()">Nu controleren op update</button>
+        <button class="btn-primary" id="btn-install" style="margin-top:10px;font-size:13px;display:none" onclick="installApp()">📲 Installeer op beginscherm</button>
+        <button class="btn-primary" style="margin-top:8px;font-size:13px;background:var(--bg3);color:var(--text)" onclick="checkForUpdate()">Nu controleren op update</button>
       </div>
     </div>
 
@@ -545,7 +558,7 @@ select.input-field{appearance:none;-webkit-appearance:none;background-image:url(
 </div>
 <div class="upd-banner" id="upd-banner">Nieuwe versie beschikbaar <button onclick="applyUpdate()">Vernieuwen</button></div>
 <script>
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.2.0';
 
 // ── WORKOUTS ──────────────────────────────────────────────────────
 // Basic Fit: full body A/B/C in rotatie, volledig op machines. Bij 3×/week
@@ -814,6 +827,7 @@ function showPage(id, btn){
   if(id==='home')     updateHome();
   if(id==='training') renderTraining();
   if(id==='historie') renderHistorie();
+  if(id==='profiel')  renderPersistStatus();
 }
 function gotoTraining(){ showPage('training', document.querySelectorAll('.nav-btn')[1]); }
 
@@ -1655,6 +1669,71 @@ function renderHistRoeier(){
     '<div class="card"><div class="section-label">Per week</div><div style="display:flex;flex-direction:column">'+weekRows+'</div></div>'+
     '<div class="card"><div class="section-label">Alle sessies</div>'+sessions+'</div>';
 }
+
+// ── OPSLAG BEVEILIGEN ─────────────────────────────────────────────
+// Vraagt de browser om localStorage niet op te ruimen als de opslag vol raakt.
+async function renderPersistStatus(){
+  const el  = document.getElementById('persist-status');
+  const btn = document.getElementById('btn-persist');
+  if(!el) return;
+  if(!navigator.storage || !navigator.storage.persisted){
+    el.innerHTML = '<span style="color:var(--text3)">Deze browser kan opslag niet beveiligen — exporteer af en toe een backup.</span>';
+    return;
+  }
+  let ok = false;
+  try{ ok = await navigator.storage.persisted(); }catch(e){}
+  let ruimte = '';
+  try{
+    if(navigator.storage.estimate){
+      const est = await navigator.storage.estimate();
+      if(est && est.usage!=null) ruimte = ' · '+(est.usage/1024).toFixed(0)+' kB in gebruik';
+    }
+  }catch(e){}
+  el.innerHTML = ok
+    ? '<span style="color:var(--accent)">●</span><span style="color:var(--text2)">Opslag beveiligd — je data wordt niet opgeruimd'+ruimte+'</span>'
+    : '<span style="color:var(--orange)">●</span><span style="color:var(--text2)">Opslag niet beveiligd'+ruimte+'</span>';
+  if(btn) btn.style.display = ok ? 'none' : 'block';
+}
+async function askPersistence(){
+  try{
+    const ok = await navigator.storage.persist();
+    showToast(ok ? 'Opslag beveiligd ✓' : 'Browser gaf geen toestemming');
+  }catch(e){ showToast('Niet gelukt'); }
+  renderPersistStatus();
+}
+// stilletjes proberen bij het opstarten; lukt meestal zodra de app geïnstalleerd is
+(async ()=>{
+  try{
+    if(navigator.storage && navigator.storage.persist && !(await navigator.storage.persisted())){
+      await navigator.storage.persist();
+    }
+  }catch(e){}
+  renderPersistStatus();
+})();
+
+// ── INSTALLEREN ───────────────────────────────────────────────────
+let _installPrompt = null;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  _installPrompt = e;
+  const b = document.getElementById('btn-install');
+  if(b) b.style.display = 'block';
+});
+function installApp(){
+  if(!_installPrompt){ showToast('Al geïnstalleerd, of gebruik het browsermenu'); return; }
+  _installPrompt.prompt();
+  _installPrompt.userChoice.finally(()=>{
+    _installPrompt = null;
+    const b = document.getElementById('btn-install');
+    if(b) b.style.display = 'none';
+  });
+}
+window.addEventListener('appinstalled', ()=>{
+  const b = document.getElementById('btn-install');
+  if(b) b.style.display = 'none';
+  showToast('Geïnstalleerd 🎉');
+  renderPersistStatus();
+});
 
 // ── AUTO-UPDATE (service worker) ──────────────────────────────────
 let _swReg = null;
