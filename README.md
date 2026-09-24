@@ -44,12 +44,16 @@ en past zich vanzelf aan.
 {id:'gymA', name:'Basic Fit — Full body A', loc:'gym', icon:'🏋️', badge:'blue',
  focus:'korte omschrijving',
  exercises:[
-   {name:'Barbell squat', sets:3, reps:'8–10', w:true},   // w:true  = kg × reps
-   {name:'Pull-up',       sets:3, reps:'max',  w:false},  // w:false = alleen reps
+   {name:'Leg press',        sets:3, reps:'10–12', w:true},              // kg × reps
+   {name:'Pull-up (assist)', sets:3, reps:'8–10',  w:true, invert:true}, // lager = beter
+   {name:'Push-ups',         sets:3, reps:'max',   w:false},             // alleen reps
  ]}
 ```
 
 - `loc: 'gym'` telt mee voor het Basic Fit-weekdoel, `'thuis'` voor het thuisdoel.
+- `invert: true` voor assist-machines (pull-up, dip): minder gewicht is daar
+  vooruitgang. Zulke oefeningen tellen niet mee in het volume — assistentie is
+  geen getilde last.
 - `id` nooit hergebruiken voor iets anders — gelogde sessies verwijzen ernaar.
 - Oefeningen hernoemen breekt de koppeling met eerder gelogde sets (die blijven
   bestaan onder de oude naam, maar "vorige keer" begint opnieuw).

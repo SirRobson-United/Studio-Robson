@@ -545,45 +545,46 @@ select.input-field{appearance:none;-webkit-appearance:none;background-image:url(
 </div>
 <div class="upd-banner" id="upd-banner">Nieuwe versie beschikbaar <button onclick="applyUpdate()">Vernieuwen</button></div>
 <script>
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 
 // ── WORKOUTS ──────────────────────────────────────────────────────
-// LET OP: het Basic Fit-gedeelte is een STARTVOORSTEL (hypertrofie, full body
-// A/B/C in rotatie — bij 3×/week raakt elke spiergroep 3× per week, wat bij die
-// frequentie beter werkt dan een split). Vervang de oefeningen door wat je
-// daar werkelijk doet: alleen deze array aanpassen, de rest van de app volgt.
-//   w:true  = met gewicht (kg × reps)   w:false = lichaamsgewicht (reps)
+// Basic Fit: full body A/B/C in rotatie, volledig op machines. Bij 3×/week
+// raakt zo elke spiergroep 2 à 3× per week — betere frequentie voor spiergroei
+// dan een split. Schema aanpassen = alleen deze array; de rest van de app volgt.
+//   w:true   = met gewicht (kg × reps)      w:false = lichaamsgewicht (reps)
+//   invert:true = lager gewicht is beter (assistentie, bv. de pull-up machine)
 const WORKOUTS = [
   {id:'gymA', name:'Basic Fit — Full body A', loc:'gym', icon:'🏋️', badge:'blue',
-   focus:'Squat · bench · lat pulldown',
+   focus:'Leg press · chest press · lat pulldown',
    exercises:[
-     {name:'Barbell squat',            sets:3, reps:'8–10',  w:true},
-     {name:'Bench press',              sets:3, reps:'8–10',  w:true},
-     {name:'Lat pulldown',             sets:3, reps:'10–12', w:true},
-     {name:'Dumbbell shoulder press',  sets:3, reps:'10–12', w:true},
-     {name:'Leg curl',                 sets:3, reps:'12–15', w:true},
-     {name:'Triceps pushdown',         sets:3, reps:'12–15', w:true},
+     {name:'Leg press',                    sets:3, reps:'10–12', w:true},
+     {name:'Chest press (machine)',        sets:3, reps:'10–12', w:true},
+     {name:'Lat pulldown (breed)',         sets:3, reps:'10–12', w:true},
+     {name:'Shoulder press (machine)',     sets:3, reps:'10–12', w:true},
+     {name:'Leg curl (zittend)',           sets:3, reps:'12–15', w:true},
+     {name:'Triceps pushdown (kabel)',     sets:3, reps:'12–15', w:true},
    ]},
   {id:'gymB', name:'Basic Fit — Full body B', loc:'gym', icon:'🏋️', badge:'green',
-   focus:'RDL · roeien · leg press',
+   focus:'Hack squat · seated row · pec deck',
    exercises:[
-     {name:'Romanian deadlift',        sets:3, reps:'8–10',  w:true},
-     {name:'Seated cable row',         sets:3, reps:'10–12', w:true},
-     {name:'Leg press',                sets:3, reps:'10–12', w:true},
-     {name:'Incline dumbbell press',   sets:3, reps:'10–12', w:true},
-     {name:'Lateral raise',            sets:3, reps:'12–15', w:true},
-     {name:'Biceps curl',              sets:3, reps:'12–15', w:true},
+     {name:'Hack squat (of Smith squat)',  sets:3, reps:'8–10',  w:true},
+     {name:'Seated row (kabel)',           sets:3, reps:'10–12', w:true},
+     {name:'Pec deck (butterfly)',         sets:3, reps:'12–15', w:true},
+     {name:'Lateral raise (kabel)',        sets:3, reps:'12–15', w:true},
+     {name:'Leg extension',                sets:3, reps:'12–15', w:true},
+     {name:'Biceps curl (kabel)',          sets:3, reps:'12–15', w:true},
    ]},
   {id:'gymC', name:'Basic Fit — Full body C', loc:'gym', icon:'🏋️', badge:'orange',
-   focus:'Deadlift · pull-up · split squat',
+   focus:'Leg press hoog · pull-up machine · dips',
    exercises:[
-     {name:'Deadlift',                 sets:3, reps:'5–8',   w:true},
-     {name:'Pull-up (of assisted)',    sets:3, reps:'max',   w:false},
-     {name:'Bulgarian split squat',    sets:3, reps:'10 p/b',w:true},
-     {name:'Chest press machine',      sets:3, reps:'10–12', w:true},
-     {name:'Cable fly',                sets:3, reps:'12–15', w:true},
-     {name:'Face pull',                sets:3, reps:'15',    w:true},
-   ]},
+     {name:'Leg press (voeten hoog)',      sets:3, reps:'10–12', w:true},
+     {name:'Pull-up (assist-machine)',     sets:3, reps:'8–10',  w:true, invert:true},
+     {name:'Dip (assist-machine)',         sets:3, reps:'8–12',  w:true, invert:true},
+     {name:'Leg curl (liggend)',           sets:3, reps:'12–15', w:true},
+     {name:'Face pull (kabel)',            sets:3, reps:'15',    w:true},
+     {name:'Abdominal crunch (machine)',   sets:3, reps:'15',    w:true},
+   ],
+   hint:'Bij de assist-machines telt een LAGER gewicht als vooruitgang — minder hulp betekent sterker. De app rekent dat zo.'},
   {id:'thuisUp', name:'Thuis — Bovenlichaam', loc:'thuis', icon:'🏠', badge:'purple',
    focus:'Optrekken · dips · push-ups',
    exercises:[
@@ -714,12 +715,25 @@ function todayStr(){ return new Date().toLocaleDateString('nl-BE',{day:'2-digit'
 function esc(s){ return String(s).replace(/[&<>"']/g, function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
+// Definitie van een oefening opzoeken (voor o.a. de invert-vlag)
+function exDef(name){
+  for(const w of WORKOUTS){
+    const e = w.exercises.find(x=>x.name===name);
+    if(e) return e;
+  }
+  return null;
+}
+function isInvert(name){ const d = exDef(name); return !!(d && d.invert); }
+
 // Vorige keer dat deze oefening gedaan is - beste set van die sessie
 function lastFor(ex){
+  const inv = isInvert(ex);
   for(const s of state.sessions){
     const sets = (s.sets||[]).filter(x=>x.ex===ex);
     if(!sets.length) continue;
-    const best = sets.slice().sort((a,b)=> (b.kg||0)-(a.kg||0) || b.reps-a.reps )[0];
+    const best = sets.slice().sort((a,b)=>
+      inv ? ((a.kg||0)-(b.kg||0) || b.reps-a.reps)
+          : ((b.kg||0)-(a.kg||0) || b.reps-a.reps) )[0];
     return {kg:best.kg||0, reps:best.reps, date:s.date, sets:sets.length};
   }
   const old = state.repLog.find(e=>e.ex===ex);   // val terug op de oude reps-log
@@ -729,22 +743,34 @@ function lastFor(ex){
 
 // Beste ooit
 function bestFor(ex){
+  const inv = isInvert(ex);
   let best = null;
   state.sessions.forEach(s=>(s.sets||[]).forEach(x=>{
     if(x.ex!==ex) return;
-    if(!best || (x.kg||0)>(best.kg||0) || ((x.kg||0)===(best.kg||0) && x.reps>best.reps)) best={kg:x.kg||0,reps:x.reps};
+    const kg = x.kg||0;
+    const beter = !best || (inv ? (kg<(best.kg||0) || (kg===(best.kg||0) && x.reps>best.reps))
+                                : (kg>(best.kg||0) || (kg===(best.kg||0) && x.reps>best.reps)));
+    if(beter) best={kg:kg, reps:x.reps};
   }));
   state.repLog.filter(e=>e.ex===ex).forEach(e=>{
     if(!best || ((best.kg||0)===0 && e.reps>best.reps)) best={kg:0,reps:e.reps};
   });
   return best;
 }
-function beatsPrev(set, prev, weighted){
+// invert: minder assistentie = vooruitgang, dus lager gewicht telt als beter
+function beatsPrev(set, prev, weighted, invert){
   if(!prev) return false;
-  if(weighted) return (set.kg>prev.kg) || (set.kg===prev.kg && set.reps>prev.reps);
+  if(weighted){
+    if(invert) return (set.kg<prev.kg) || (set.kg===prev.kg && set.reps>prev.reps);
+    return (set.kg>prev.kg) || (set.kg===prev.kg && set.reps>prev.reps);
+  }
   return set.reps>prev.reps;
 }
-function sessionVolume(s){ return (s.sets||[]).reduce((t,x)=>t+((x.kg||0)*x.reps),0); }
+// Assist-machines tellen niet mee: dat gewicht is hulp, geen getilde last —
+// anders zou je volume dalen naarmate je sterker wordt.
+function sessionVolume(s){
+  return (s.sets||[]).reduce((t,x)=>t+(isInvert(x.ex)?0:(x.kg||0)*x.reps),0);
+}
 function getWeekRowKm(weekKey){ return state.rowLog.filter(e=>e.week===weekKey).reduce((s,e)=>s+e.km,0); }
 function legacyWeekDone(w){ return Object.keys(state.trainDone).filter(k=>k.indexOf(w+'_')===0 && state.trainDone[k]).length; }
 
@@ -907,7 +933,7 @@ function renderWorkoutPicker(){
         '<span class="wo-go">›</span></div>';
     }).join('')
   ).join('')+
-  '<div class="note-box" style="margin-bottom:4px">Het Basic Fit-schema is een <b>startvoorstel</b>. Pas het aan naar de toestellen die jij daar gebruikt — vraag het gerust aan Claude.</div>';
+  '<div class="note-box" style="margin-bottom:4px">Het Basic Fit-schema staat op de <b>standaardtoestellen</b> van Basic-Fit. Staat er iets niet in jouw club, of wil je iets anders? Laat het aanpassen.</div>';
 }
 
 function startWorkout(wid){
@@ -939,7 +965,7 @@ function renderActiveSession(){
       const val = ex.w ? prev.kg+' kg × '+prev.reps : prev.reps+' reps';
       prevLine = '<div class="prev-line">Vorige keer <span class="prev-val">'+val+'</span>'+
         '<span style="color:var(--text3)">'+prev.date+'</span>'+
-        (pr && ((ex.w && pr.kg>prev.kg) || (!ex.w && pr.reps>prev.reps))
+        (pr && ((ex.w && (ex.invert ? pr.kg<prev.kg : pr.kg>prev.kg)) || (!ex.w && pr.reps>prev.reps))
           ? '<span class="pr-tag">PR '+(ex.w?pr.kg+' kg × '+pr.reps:pr.reps)+'</span>' : '')+'</div>';
     } else {
       prevLine = '<div class="prev-line" style="color:var(--text3)">Eerste keer — dit wordt je startpunt</div>';
@@ -949,7 +975,7 @@ function renderActiveSession(){
       ? '<input class="input-field" id="in-kg-'+i+'" type="number" inputmode="decimal" step="0.5" min="0" max="500" placeholder="kg" style="width:78px;flex:none" value="'+(prev?prev.kg||'':'')+'">'
       : '';
     const pills = mine.map(o=>{
-      const beat = beatsPrev(o.s, prev, ex.w);
+      const beat = beatsPrev(o.s, prev, ex.w, ex.invert);
       const txt  = ex.w ? o.s.kg+'×'+o.s.reps : o.s.reps;
       return '<span class="set-pill'+(beat?' beat':'')+'">'+(beat?'▲ ':'')+txt+
         '<button class="del-btn" style="font-size:12px;padding:0 0 0 2px;line-height:1" onclick="removeSet('+o.idx+')">×</button></span>';
@@ -969,7 +995,7 @@ function renderActiveSession(){
   }).join('');
 
   const nSets = state.draft.sets.length;
-  const vol   = state.draft.sets.reduce((t,x)=>t+((x.kg||0)*x.reps),0);
+  const vol   = sessionVolume(state.draft);
   const mins  = Math.max(1, Math.round((Date.now()-state.draft.started)/60000));
 
   el.innerHTML =
@@ -1005,7 +1031,7 @@ function logSet(i){
   state.draft.sets.push(set);
   save();
   renderActiveSession();
-  if(beatsPrev(set, prev, ex.w)) showToast('Beter dan vorige keer 🔥');
+  if(beatsPrev(set, prev, ex.w, ex.invert)) showToast('Beter dan vorige keer 🔥');
   else showToast('Set gelogd');
 }
 
@@ -1028,7 +1054,7 @@ function finishSession(){
     mins: Math.max(1, Math.round((Date.now()-d.started)/60000))
   });
   if(state.sessions.length>500) state.sessions.pop();
-  const vol = d.sets.reduce((t,x)=>t+((x.kg||0)*x.reps),0);
+  const vol = sessionVolume(d);
   state.draft = null;
   save();
   renderTraining();
@@ -1518,12 +1544,12 @@ function renderHistKracht(){
   state.sessions.forEach(s=>{
     const seen = {};
     (s.sets||[]).forEach(x=>{
-      if(!byEx[x.ex]) byEx[x.ex] = {w:!!x.w, entries:[], allSets:0};
+      if(!byEx[x.ex]) byEx[x.ex] = {w:!!x.w, inv:isInvert(x.ex), entries:[], allSets:0};
       byEx[x.ex].allSets++;
-      const cur = seen[x.ex];
-      if(!cur || (x.kg||0)>(cur.kg||0) || ((x.kg||0)===(cur.kg||0) && x.reps>cur.reps)){
-        seen[x.ex] = {kg:x.kg||0, reps:x.reps, date:s.date, ts:s.ts};
-      }
+      const cur = seen[x.ex], kg = x.kg||0, inv = byEx[x.ex].inv;
+      const beter = !cur || (inv ? (kg<(cur.kg||0) || (kg===(cur.kg||0) && x.reps>cur.reps))
+                                 : (kg>(cur.kg||0) || (kg===(cur.kg||0) && x.reps>cur.reps)));
+      if(beter) seen[x.ex] = {kg:kg, reps:x.reps, date:s.date, ts:s.ts};
     });
     Object.keys(seen).forEach(ex=>byEx[ex].entries.push(seen[ex]));
   });
@@ -1556,7 +1582,8 @@ function renderHistKracht(){
     let trend = '';
     if(first && last && chron.length>1){
       const dv = (d.w?last.kg:last.reps) - (d.w?first.kg:first.reps);
-      if(dv!==0) trend = '<span style="font-size:11px;color:'+(dv>0?'var(--accent)':'var(--red)')+'">'+
+      const vooruit = d.inv ? dv<0 : dv>0;   // assist-machine: minder hulp = vooruitgang
+      if(dv!==0) trend = '<span style="font-size:11px;color:'+(vooruit?'var(--accent)':'var(--red)')+'">'+
         (dv>0?'▲ +':'▼ ')+Math.abs(dv)+(d.w?' kg':' reps')+'</span>';
     }
     const recent = en.slice(0,6).map(e=>
