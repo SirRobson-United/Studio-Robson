@@ -50,6 +50,12 @@ en past zich vanzelf aan.
  ]}
 ```
 
+Een workout met een lege `exercises`-array is een **vrije sessie**: je stelt hem
+tijdens het trainen zelf samen. In elke sessie — ook een vaste — kan je onderaan
+oefeningen toevoegen; die komen in `draft.extra` en worden bij het afronden gewoon
+mee opgeslagen. Nieuwe namen belanden in `state.customExercises` en duiken daarna
+op in de suggestielijst.
+
 - `loc: 'gym'` telt mee voor het Basic Fit-weekdoel, `'thuis'` voor het thuisdoel.
 - `invert: true` voor assist-machines (pull-up, dip): minder gewicht is daar
   vooruitgang. Zulke oefeningen tellen niet mee in het volume — assistentie is
@@ -62,8 +68,9 @@ en past zich vanzelf aan.
 
 ```js
 {
-  sessions: [{ts, date, week, wid, name, loc, mins, sets:[{ex, kg, reps, w, ts}]}],
-  draft:    {wid, started, sets:[…]} | null,   // sessie die nu bezig is
+  sessions: [{ts, date, week, wid, name, loc, mins, sets:[{ex, kg, reps, w, inv, ts}]}],
+  draft:    {wid, started, sets:[…], extra:[…]} | null,   // sessie die nu bezig is
+  customExercises: [{name, w}],                // zelf toegevoegde oefeningen
   goals:    {gym, thuis, rowKm, eiwit},
   rowLog:   [{km, date, week}],
   weightLog:[{w, date}],

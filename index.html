@@ -241,6 +241,7 @@ select.input-field{appearance:none;-webkit-appearance:none;background-image:url(
 .set-pill{display:inline-flex;align-items:center;gap:4px;background:var(--bg4);border-radius:6px;padding:4px 8px;font-size:12px;font-family:'DM Mono',monospace}
 .set-pill.beat{background:rgba(200,242,64,.14);color:var(--accent)}
 .sess-bar{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.add-ex{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)}
 .goal-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
 .goal-row:last-child{border-bottom:none;padding-bottom:0}
 .goal-lbl{font-size:13px;flex:1}
@@ -500,6 +501,10 @@ select.input-field{appearance:none;-webkit-appearance:none;background-image:url(
           <button class="btn-primary" style="flex:1;font-size:13px" onclick="exportData()">↑ Exporteer</button>
           <button class="btn-primary" style="flex:1;font-size:13px;background:var(--bg3);color:var(--text)" onclick="importData()">↓ Importeer</button>
         </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">Voor analyse: een CSV met elke gelogde set, je roeikilometers en je wegingen. Opent in Excel, en je kan hem doorsturen.</div>
+          <button class="btn-primary" style="font-size:13px;background:var(--bg3);color:var(--text)" onclick="exportCSV()">📊 Exporteer trainingsdata (CSV)</button>
+        </div>
         <div id="persist-status" style="margin-top:12px;font-size:12px;display:flex;align-items:center;gap:7px"></div>
         <button class="btn-primary" id="btn-persist" style="margin-top:10px;font-size:13px;background:var(--bg3);color:var(--text);display:none" onclick="askPersistence()">Opslag beveiligen</button>
       </div>
@@ -558,7 +563,7 @@ select.input-field{appearance:none;-webkit-appearance:none;background-image:url(
 </div>
 <div class="upd-banner" id="upd-banner">Nieuwe versie beschikbaar <button onclick="applyUpdate()">Vernieuwen</button></div>
 <script>
-const APP_VERSION = '2.2.1';
+const APP_VERSION = '2.3.0';
 
 // ── WORKOUTS ──────────────────────────────────────────────────────
 // Basic Fit: full body A/B/C in rotatie, volledig op machines. Bij 3×/week
@@ -598,6 +603,10 @@ const WORKOUTS = [
      {name:'Abdominal crunch (machine)',   sets:3, reps:'15',    w:true},
    ],
    hint:'Bij de assist-machines telt een LAGER gewicht als vooruitgang — minder hulp betekent sterker. De app rekent dat zo.'},
+  {id:'vrijGym', name:'Basic Fit — vrije sessie', loc:'gym', icon:'✏️', badge:'gray',
+   focus:'Zelf samenstellen',
+   exercises:[],
+   hint:'Lege sessie: voeg hieronder toe wat je doet, toestel per toestel.'},
   {id:'thuisUp', name:'Thuis — Bovenlichaam', loc:'thuis', icon:'🏠', badge:'purple',
    focus:'Optrekken · dips · push-ups',
    exercises:[
@@ -615,6 +624,10 @@ const WORKOUTS = [
      {name:'Zijwaartse plank',         sets:2, reps:'30 sec', w:false},
    ],
    hint:'Log je kilometers in de roeierkaart onderaan.'},
+  {id:'vrijThuis', name:'Thuis — vrije sessie', loc:'thuis', icon:'✏️', badge:'gray',
+   focus:'Zelf samenstellen',
+   exercises:[],
+   hint:'Lege sessie: voeg hieronder toe wat je doet.'},
 ];
 const WO = Object.fromEntries(WORKOUTS.map(w=>[w.id,w]));
 const BADGE_COLOR = {push:'blue',pull:'green',full:'orange',cardio:'purple',rest:'gray'};
@@ -699,7 +712,8 @@ if(!state.profile)         state.profile = {};
 if(!state.rowLog)          state.rowLog = [];
 if(!state.bestStreak)      state.bestStreak = 0;
 if(!state.selectedRecipes) state.selectedRecipes = [];
-if(!state.sessions)        state.sessions = [];       // {ts,date,week,wid,name,loc,sets:[{ex,kg,reps,w}]}
+if(!state.sessions)        state.sessions = [];       // {ts,date,week,wid,name,loc,sets:[{ex,kg,reps,w,inv}]}
+if(!state.customExercises) state.customExercises = []; // zelf toegevoegde oefeningen
 if(!state.goals)           state.goals = {};
 if(state.goals.gym==null)    state.goals.gym   = 3;
 if(state.goals.thuis==null)  state.goals.thuis = 2;
@@ -730,13 +744,24 @@ function esc(s){ return String(s).replace(/[&<>"']/g, function(c){
 
 // Definitie van een oefening opzoeken (voor o.a. de invert-vlag)
 function exDef(name){
+  const l = String(name).toLowerCase();
   for(const w of WORKOUTS){
-    const e = w.exercises.find(x=>x.name===name);
+    const e = w.exercises.find(x=>x.name.toLowerCase()===l);
+    if(e) return e;
+  }
+  if(state.draft && state.draft.extra){
+    const e = state.draft.extra.find(x=>x.name.toLowerCase()===l);
+    if(e) return e;
+  }
+  if(state.customExercises){
+    const e = state.customExercises.find(x=>x.name.toLowerCase()===l);
     if(e) return e;
   }
   return null;
 }
 function isInvert(name){ const d = exDef(name); return !!(d && d.invert); }
+// Voorkeur voor de vlag die bij de set zelf is opgeslagen
+function setIsInvert(x){ return x.inv!==undefined ? !!x.inv : isInvert(x.ex); }
 
 // Vorige keer dat deze oefening gedaan is - beste set van die sessie
 function lastFor(ex){
@@ -782,7 +807,7 @@ function beatsPrev(set, prev, weighted, invert){
 // Assist-machines tellen niet mee: dat gewicht is hulp, geen getilde last —
 // anders zou je volume dalen naarmate je sterker wordt.
 function sessionVolume(s){
-  return (s.sets||[]).reduce((t,x)=>t+(isInvert(x.ex)?0:(x.kg||0)*x.reps),0);
+  return (s.sets||[]).reduce((t,x)=>t+(setIsInvert(x)?0:(x.kg||0)*x.reps),0);
 }
 function getWeekRowKm(weekKey){ return state.rowLog.filter(e=>e.week===weekKey).reduce((s,e)=>s+e.km,0); }
 function legacyWeekDone(w){ return Object.keys(state.trainDone).filter(k=>k.indexOf(w+'_')===0 && state.trainDone[k]).length; }
@@ -906,7 +931,7 @@ function updateHome(){
 
 // Volgende workout: rouleer door gym A/B/C - die je het langst niet deed
 function suggestWorkout(){
-  const gym = WORKOUTS.filter(w=>w.loc==='gym');
+  const gym = WORKOUTS.filter(w=>w.loc==='gym' && w.exercises.length);   // vrije sessie niet voorstellen
   const lastIdx = {};
   gym.forEach(w=>{ lastIdx[w.id] = state.sessions.findIndex(s=>s.wid===w.id); });
   const never = gym.find(w=>lastIdx[w.id]===-1);
@@ -955,12 +980,19 @@ function startWorkout(wid){
     if(!confirm('Je hebt nog een sessie openstaan. Die weggooien en deze starten?')) return;
   }
   if(!state.draft || state.draft.wid!==wid){
-    state.draft = {wid:wid, started:Date.now(), sets:[]};
+    state.draft = {wid:wid, started:Date.now(), sets:[], extra:[]};
     save();
   }
+  if(!state.draft.extra) state.draft.extra = [];
   renderTraining();
   updateHome();
   document.getElementById('page-training').scrollTop = 0;
+}
+
+// Oefeningen van het schema + wat je deze sessie zelf toevoegde
+function draftExercises(){
+  const w = WO[state.draft.wid];
+  return (w ? w.exercises : []).concat(state.draft.extra || []);
 }
 
 function renderActiveSession(){
@@ -968,8 +1000,9 @@ function renderActiveSession(){
   if(!state.draft){ el.innerHTML=''; return; }
   const w = WO[state.draft.wid];
   if(!w){ state.draft=null; save(); el.innerHTML=''; return; }
+  const vaste = w.exercises.length;
 
-  const rows = w.exercises.map((ex,i)=>{
+  const rows = draftExercises().map((ex,i)=>{
     const prev = lastFor(ex.name);
     const pr   = bestFor(ex.name);
     const mine = state.draft.sets.map((s,idx)=>({s:s,idx:idx})).filter(o=>o.s.ex===ex.name);
@@ -985,8 +1018,13 @@ function renderActiveSession(){
       prevLine = '<div class="prev-line" style="color:var(--text3)">Eerste keer — dit wordt je startpunt</div>';
     }
 
+    // velden vullen met je laatste set van deze sessie, anders met vorige keer
+    const laatste = mine.length ? mine[mine.length-1].s : null;
+    const vulKg   = laatste ? laatste.kg   : (prev ? prev.kg   : '');
+    const vulReps = laatste ? laatste.reps : (prev ? prev.reps : '');
+
     const kgField = ex.w
-      ? '<input class="input-field" id="in-kg-'+i+'" type="number" inputmode="decimal" step="0.5" min="0" max="500" placeholder="kg" style="width:78px;flex:none" value="'+(prev?prev.kg||'':'')+'">'
+      ? '<input class="input-field" id="in-kg-'+i+'" type="number" inputmode="decimal" step="0.5" min="0" max="500" placeholder="kg" style="width:78px;flex:none" value="'+(vulKg||'')+'">'
       : '';
     const pills = mine.map(o=>{
       const beat = beatsPrev(o.s, prev, ex.w, ex.invert);
@@ -995,12 +1033,15 @@ function renderActiveSession(){
         '<button class="del-btn" style="font-size:12px;padding:0 0 0 2px;line-height:1" onclick="removeSet('+o.idx+')">×</button></span>';
     }).join('');
 
+    const isExtra = i>=vaste;
     return '<div class="sess-ex">'+
-      '<div class="sess-ex-head"><span class="sess-ex-name">'+esc(ex.name)+'</span>'+
-        '<span class="sess-ex-target">'+ex.sets+' × '+esc(ex.reps)+'</span></div>'+
+      '<div class="sess-ex-head"><span class="sess-ex-name">'+esc(ex.name)+
+        (isExtra?' <span class="badge badge-gray" style="font-size:9px;padding:2px 6px">extra</span>':'')+'</span>'+
+        '<span class="sess-ex-target">'+ex.sets+' × '+esc(ex.reps)+
+        (isExtra?' <button class="del-btn" style="font-size:12px" onclick="removeExtra('+(i-vaste)+')">×</button>':'')+'</span></div>'+
       prevLine+
       '<div class="set-inputs">'+kgField+
-        '<input class="input-field" id="in-reps-'+i+'" type="number" inputmode="numeric" min="1" max="500" placeholder="reps" style="width:78px;flex:none" value="'+(prev?prev.reps:'')+'">'+
+        '<input class="input-field" id="in-reps-'+i+'" type="number" inputmode="numeric" min="1" max="500" placeholder="reps" style="width:78px;flex:none" value="'+(vulReps||'')+'">'+
         '<button class="btn-set" onclick="logSet('+i+')">+ set</button>'+
         '<span style="flex:1;text-align:right;font-size:11px;color:var(--text3)">'+mine.length+'/'+ex.sets+'</span>'+
       '</div>'+
@@ -1021,6 +1062,17 @@ function renderActiveSession(){
         '<span class="badge badge-orange">bezig</span></div>'+
       (w.hint?'<div class="note-box" style="margin:10px 0 2px">'+esc(w.hint)+'</div>':'')+
       '<div style="margin-top:8px">'+rows+'</div>'+
+      '<div class="add-ex">'+
+        '<div class="section-label" style="margin-bottom:7px">Oefening toevoegen</div>'+
+        '<div style="display:flex;gap:6px;margin-bottom:7px">'+
+          '<input class="input-field" id="add-ex-name" list="ex-library" placeholder="Toestel of oefening" style="flex:1;font-size:14px" autocomplete="off">'+
+          '<button class="btn-set" onclick="addExercise()">+</button>'+
+        '</div>'+
+        '<label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2)">'+
+          '<input type="checkbox" id="add-ex-w" checked style="accent-color:var(--accent);width:16px;height:16px">'+
+          'Met gewicht (kg × reps)</label>'+
+        '<datalist id="ex-library">'+exerciseLibrary().map(n=>'<option value="'+esc(n)+'">').join('')+'</datalist>'+
+      '</div>'+
       '<div class="sess-bar">'+
         '<button class="btn-primary" onclick="finishSession()">Sessie afronden ✓</button>'+
         '<button class="btn-primary" style="margin-top:8px;background:transparent;color:var(--text3);font-weight:500;font-size:13px" onclick="cancelSession()">Annuleren</button>'+
@@ -1028,9 +1080,58 @@ function renderActiveSession(){
     '</div>';
 }
 
+// Alle oefeningnamen die de app kent: schema's, wat je zelf toevoegde, en alles
+// wat ooit gelogd is. Voedt de suggestielijst bij "Oefening toevoegen".
+function exerciseLibrary(){
+  const set = new Set();
+  WORKOUTS.forEach(w=>w.exercises.forEach(e=>set.add(e.name)));
+  (state.customExercises||[]).forEach(e=>set.add(e.name));
+  state.sessions.forEach(s=>(s.sets||[]).forEach(x=>set.add(x.ex)));
+  state.repLog.forEach(e=>set.add(e.ex));
+  return [...set].sort((a,b)=>a.localeCompare(b,'nl'));
+}
+
+function addExercise(){
+  const inp  = document.getElementById('add-ex-name');
+  const naam = inp.value.trim();
+  if(!naam){ inp.focus(); return; }
+  const weighted = document.getElementById('add-ex-w').checked;
+
+  if(draftExercises().some(e=>e.name.toLowerCase()===naam.toLowerCase())){
+    showToast('Staat al in deze sessie'); inp.value=''; return;
+  }
+  // bestaande definitie hergebruiken, zodat invert en doelen behouden blijven
+  const bestaand = exDef(naam);
+  const ex = bestaand
+    ? {name:bestaand.name, sets:bestaand.sets, reps:bestaand.reps, w:bestaand.w, invert:bestaand.invert}
+    : {name:naam, sets:3, reps:'8–12', w:weighted};
+
+  if(!state.draft.extra) state.draft.extra = [];
+  state.draft.extra.push(ex);
+
+  if(!bestaand){
+    if(!state.customExercises) state.customExercises = [];
+    if(!state.customExercises.some(e=>e.name===naam)) state.customExercises.push({name:naam, w:weighted});
+  }
+  save();
+  inp.value = '';
+  renderActiveSession();
+  showToast(naam+' toegevoegd');
+}
+
+function removeExtra(j){
+  const ex = (state.draft.extra||[])[j];
+  if(!ex) return;
+  const gelogd = state.draft.sets.some(s=>s.ex===ex.name);
+  if(gelogd && !confirm('Je hebt hier al sets voor gelogd. Toch verwijderen? Die sets verdwijnen mee.')) return;
+  state.draft.sets = state.draft.sets.filter(s=>s.ex!==ex.name);
+  state.draft.extra.splice(j,1);
+  save();
+  renderActiveSession();
+}
+
 function logSet(i){
-  const w  = WO[state.draft.wid];
-  const ex = w.exercises[i];
+  const ex = draftExercises()[i];
   const repsEl = document.getElementById('in-reps-'+i);
   const reps = parseInt(repsEl.value);
   if(!reps || reps<1){ repsEl.focus(); return; }
@@ -1041,7 +1142,9 @@ function logSet(i){
     if(isNaN(kg) || kg<0){ kgEl.focus(); return; }
   }
   const prev = lastFor(ex.name);
-  const set  = {ex:ex.name, kg:kg, reps:reps, w:!!ex.w, ts:Date.now()};
+  // inv wordt meegeschreven zodat oude sets zichzelf blijven verklaren,
+  // ook als de oefening later uit het schema verdwijnt
+  const set  = {ex:ex.name, kg:kg, reps:reps, w:!!ex.w, inv:!!ex.invert, ts:Date.now()};
   state.draft.sets.push(set);
   save();
   renderActiveSession();
@@ -1466,6 +1569,43 @@ function exportData(){
   URL.revokeObjectURL(url);
   showToast('Data geëxporteerd!');
 }
+// CSV met elke gelogde set — bedoeld om door te sturen voor analyse.
+// Eén rij per set, plus de roeisessies en gewichtsmetingen als eigen regels.
+function exportCSV(){
+  const q = v => {
+    const s = String(v==null ? '' : v);
+    return /[";\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  };
+  const rijen = [['datum','week','type','sessie','locatie','oefening','set','kg','reps','volume_kg','assist','km']];
+
+  // state staat nieuwste eerst; omdraaien naar chronologisch
+  state.sessions.slice().reverse().forEach(s=>{
+    const perEx = {};
+    (s.sets||[]).forEach(x=>{
+      perEx[x.ex] = (perEx[x.ex]||0)+1;
+      const assist = setIsInvert(x);
+      rijen.push([s.date, s.week, 'set', s.name, s.loc, x.ex, perEx[x.ex],
+                  x.w ? x.kg : '', x.reps,
+                  (assist || !x.w) ? '' : (x.kg||0)*x.reps,
+                  assist ? 'ja' : 'nee', '']);
+    });
+  });
+  state.rowLog.slice().reverse().forEach(e=>
+    rijen.push([e.date, e.week, 'roeier', '', 'thuis', 'Roeien', '', '', '', '', '', e.km]));
+  state.weightLog.slice().reverse().forEach(e=>
+    rijen.push([e.date, '', 'lichaamsgewicht', '', '', 'Weging', '', e.w, '', '', '', '']));
+
+  const csv = '﻿' + rijen.map(r=>r.map(q).join(';')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'studiorobson-training-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV gedownload — '+(rijen.length-1)+' regels');
+}
+
 function importData(){ document.getElementById('import-file').click(); }
 function doImport(event){
   const file = event.target.files[0];

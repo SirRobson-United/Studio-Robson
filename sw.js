@@ -1,6 +1,6 @@
 // Studio Robson — service worker
 // Bump VERSION bij elke deploy (zelfde nummer als APP_VERSION in index.html).
-const VERSION = '2.2.1';
+const VERSION = '2.3.0';
 const CACHE   = 'studio-robson-v' + VERSION;
 
 const SHELL = [
