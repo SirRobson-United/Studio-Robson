@@ -60,6 +60,16 @@ op in de suggestielijst.
 - `invert: true` voor assist-machines (pull-up, dip): minder gewicht is daar
   vooruitgang. Zulke oefeningen tellen niet mee in het volume — assistentie is
   geen getilde last.
+- `cardio: true` maakt van de velden "level" en "min" in plaats van kg en reps.
+  Telt ook niet mee in het volume.
+
+Een sessie krijgt standaard de datum van vandaag, maar dat datumveld is
+aanpasbaar: een achteraf ingevulde training belandt in de week waarin hij
+werkelijk plaatsvond. Hetzelfde geldt voor de roeierkaart.
+
+Een importbestand hoeft niet volledig te zijn: `doImport` doet `Object.assign`,
+dus een JSON met alleen `sessions` en `rowLog` vult die aan zonder profiel,
+doelen of gewichtslog te raken. Handig om achteraf trainingen bij te zetten.
 - `id` nooit hergebruiken voor iets anders — gelogde sessies verwijzen ernaar.
 - Oefeningen hernoemen breekt de koppeling met eerder gelogde sets (die blijven
   bestaan onder de oude naam, maar "vorige keer" begint opnieuw).

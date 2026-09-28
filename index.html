@@ -242,6 +242,10 @@ select.input-field{appearance:none;-webkit-appearance:none;background-image:url(
 .set-pill.beat{background:rgba(200,242,64,.14);color:var(--accent)}
 .sess-bar{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
 .add-ex{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)}
+.sess-datum{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--text2)}
+.sess-datum input[type=date]{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:6px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none}
+.sess-datum input[type=date]:focus{border-color:var(--accent)}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6)}
 .goal-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
 .goal-row:last-child{border-bottom:none;padding-bottom:0}
 .goal-lbl{font-size:13px;flex:1}
@@ -395,6 +399,7 @@ select.input-field{appearance:none;-webkit-appearance:none;background-image:url(
         <div class="pbar-wrap" style="margin-bottom:12px"><div class="pbar" id="row-week-pbar" style="background:var(--blue);width:0%"></div></div>
         <div style="display:flex;gap:8px;margin-bottom:10px">
           <input class="input-field" id="inp-row-km" type="number" inputmode="decimal" placeholder="km geroeid" step="0.1" min="0.1" max="30" style="flex:1">
+          <input class="input-field" id="inp-row-date" type="date" style="width:132px;flex:none;font-size:13px" title="Datum">
           <button class="btn-primary" style="width:auto;padding:10px 16px" onclick="logRow()">+</button>
         </div>
         <div id="row-recent"></div>
@@ -563,46 +568,40 @@ select.input-field{appearance:none;-webkit-appearance:none;background-image:url(
 </div>
 <div class="upd-banner" id="upd-banner">Nieuwe versie beschikbaar <button onclick="applyUpdate()">Vernieuwen</button></div>
 <script>
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.5.0';
 
 // ── WORKOUTS ──────────────────────────────────────────────────────
-// Basic Fit: full body A/B/C in rotatie, volledig op machines. Bij 3×/week
-// raakt zo elke spiergroep 2 à 3× per week — betere frequentie voor spiergroei
-// dan een split. Schema aanpassen = alleen deze array; de rest van de app volgt.
-//   w:true   = met gewicht (kg × reps)      w:false = lichaamsgewicht (reps)
-//   invert:true = lager gewicht is beter (assistentie, bv. de pull-up machine)
+// Het bovenlichaamschema komt van de toestellen die Robby in zijn club heeft
+// gefotografeerd; de namen staan er exact zo op de borden. Het benenschema is
+// nog NIET ter plaatse bevestigd. Aanpassen = alleen deze array; de rest volgt.
+//   w:true      = met gewicht (kg × reps)   w:false = lichaamsgewicht (reps)
+//   invert:true = lager gewicht is beter (assistentie, bv. een pull-up machine)
+//   cardio:true = velden worden "level" en "min", telt niet mee in het volume
 const WORKOUTS = [
-  {id:'gymA', name:'Basic Fit — Full body A', loc:'gym', icon:'🏋️', badge:'blue',
-   focus:'Leg press · chest press · lat pulldown',
+  {id:'gymUpper', name:'Basic Fit — Bovenlichaam', loc:'gym', icon:'🏋️', badge:'blue',
+   focus:'Borst · rug · armen · core',
    exercises:[
-     {name:'Leg press',                    sets:3, reps:'10–12', w:true},
-     {name:'Chest press (machine)',        sets:3, reps:'10–12', w:true},
-     {name:'Lat pulldown (breed)',         sets:3, reps:'10–12', w:true},
-     {name:'Shoulder press (machine)',     sets:3, reps:'10–12', w:true},
-     {name:'Leg curl (zittend)',           sets:3, reps:'12–15', w:true},
-     {name:'Triceps pushdown (kabel)',     sets:3, reps:'12–15', w:true},
+     {name:'Seated triceps press',      sets:3, reps:'12',     w:true},
+     {name:'Chest press',               sets:3, reps:'12',     w:true},
+     {name:'Arm curl',                  sets:3, reps:'12',     w:true},
+     {name:'Converging chest press',    sets:3, reps:'12',     w:true},
+     {name:'Converging shoulder press', sets:3, reps:'12',     w:true},
+     {name:'Abdominal',                 sets:3, reps:'12',     w:true},
+     {name:'Back extension',            sets:3, reps:'12',     w:true},
+     {name:'Seated row',                sets:3, reps:'12',     w:true},
+     {name:'Crosstrainer',              sets:1, reps:'20 min', w:true, cardio:true},
    ]},
-  {id:'gymB', name:'Basic Fit — Full body B', loc:'gym', icon:'🏋️', badge:'green',
-   focus:'Hack squat · seated row · pec deck',
+  {id:'gymLegs', name:'Basic Fit — Benen', loc:'gym', icon:'🦵', badge:'orange',
+   focus:'Leg press · extension · curl',
    exercises:[
-     {name:'Hack squat (of Smith squat)',  sets:3, reps:'8–10',  w:true},
-     {name:'Seated row (kabel)',           sets:3, reps:'10–12', w:true},
-     {name:'Pec deck (butterfly)',         sets:3, reps:'12–15', w:true},
-     {name:'Lateral raise (kabel)',        sets:3, reps:'12–15', w:true},
-     {name:'Leg extension',                sets:3, reps:'12–15', w:true},
-     {name:'Biceps curl (kabel)',          sets:3, reps:'12–15', w:true},
-   ]},
-  {id:'gymC', name:'Basic Fit — Full body C', loc:'gym', icon:'🏋️', badge:'orange',
-   focus:'Leg press hoog · pull-up machine · dips',
-   exercises:[
-     {name:'Leg press (voeten hoog)',      sets:3, reps:'10–12', w:true},
-     {name:'Pull-up (assist-machine)',     sets:3, reps:'8–10',  w:true, invert:true},
-     {name:'Dip (assist-machine)',         sets:3, reps:'8–12',  w:true, invert:true},
-     {name:'Leg curl (liggend)',           sets:3, reps:'12–15', w:true},
-     {name:'Face pull (kabel)',            sets:3, reps:'15',    w:true},
-     {name:'Abdominal crunch (machine)',   sets:3, reps:'15',    w:true},
+     {name:'Leg press',                 sets:3, reps:'12',     w:true},
+     {name:'Leg extension',             sets:3, reps:'12',     w:true},
+     {name:'Leg curl',                  sets:3, reps:'12',     w:true},
+     {name:'Seated calf raise',         sets:3, reps:'15',     w:true},
+     {name:'Abdominal',                 sets:3, reps:'12',     w:true},
+     {name:'Crosstrainer',              sets:1, reps:'20 min', w:true, cardio:true},
    ],
-   hint:'Bij de assist-machines telt een LAGER gewicht als vooruitgang — minder hulp betekent sterker. De app rekent dat zo.'},
+   hint:'Deze toestellen heb je nog niet bevestigd. Staat er iets anders? Pas de naam aan via "Oefening toevoegen", of laat het schema aanpassen.'},
   {id:'vrijGym', name:'Basic Fit — vrije sessie', loc:'gym', icon:'✏️', badge:'gray',
    focus:'Zelf samenstellen',
    exercises:[],
@@ -739,6 +738,18 @@ function getCurrentWeekKey(d){
 function weekKeyToNum(w){ const p=w.split('W'); return parseInt(p[0])*100+parseInt(p[1]); }
 function weekKeyToDate(w){ const p=w.split('W'); return 'W'+p[1]+" '"+String(p[0]).slice(2); }
 function todayStr(){ return new Date().toLocaleDateString('nl-BE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function isoVandaag(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// yyyy-mm-dd uit een date-input -> dd/mm/jjjj zoals de rest van de app het bewaart
+function isoNaarDatum(iso){
+  if(!iso) return todayStr();
+  const p = iso.split('-');
+  if(p.length!==3) return todayStr();
+  return p[2]+'/'+p[1]+'/'+p[0];
+}
+function isoNaarTs(iso){
+  const p = String(iso||'').split('-');
+  return p.length===3 ? new Date(+p[0], +p[1]-1, +p[2], 12, 0, 0).getTime() : Date.now();
+}
 function esc(s){ return String(s).replace(/[&<>"']/g, function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
@@ -760,8 +771,17 @@ function exDef(name){
   return null;
 }
 function isInvert(name){ const d = exDef(name); return !!(d && d.invert); }
+function isCardio(name){ const d = exDef(name); return !!(d && d.cardio); }
 // Voorkeur voor de vlag die bij de set zelf is opgeslagen
 function setIsInvert(x){ return x.inv!==undefined ? !!x.inv : isInvert(x.ex); }
+function setIsCardio(x){ return x.c!==undefined ? !!x.c : isCardio(x.ex); }
+// Hoe een resultaat er uitziet in tekst
+function setLabel(x, ex){
+  const cardio = ex ? ex.cardio : setIsCardio(x);
+  const weight = ex ? ex.w : (x.w!==false);
+  if(cardio) return 'level '+x.kg+' · '+x.reps+' min';
+  return weight ? x.kg+' kg × '+x.reps : x.reps+' reps';
+}
 
 // Vorige keer dat deze oefening gedaan is - beste set van die sessie
 function lastFor(ex){
@@ -806,8 +826,10 @@ function beatsPrev(set, prev, weighted, invert){
 }
 // Assist-machines tellen niet mee: dat gewicht is hulp, geen getilde last —
 // anders zou je volume dalen naarmate je sterker wordt.
+// Assistentiegewicht en cardio tellen niet als getilde last
 function sessionVolume(s){
-  return (s.sets||[]).reduce((t,x)=>t+(setIsInvert(x)?0:(x.kg||0)*x.reps),0);
+  return (s.sets||[]).reduce((t,x)=>
+    t + ((setIsInvert(x)||setIsCardio(x)) ? 0 : (x.kg||0)*x.reps), 0);
 }
 function getWeekRowKm(weekKey){ return state.rowLog.filter(e=>e.week===weekKey).reduce((s,e)=>s+e.km,0); }
 function legacyWeekDone(w){ return Object.keys(state.trainDone).filter(k=>k.indexOf(w+'_')===0 && state.trainDone[k]).length; }
@@ -1009,7 +1031,7 @@ function renderActiveSession(){
 
     let prevLine;
     if(prev){
-      const val = ex.w ? prev.kg+' kg × '+prev.reps : prev.reps+' reps';
+      const val = setLabel(prev, ex);
       prevLine = '<div class="prev-line">Vorige keer <span class="prev-val">'+val+'</span>'+
         '<span style="color:var(--text3)">'+prev.date+'</span>'+
         (pr && ((ex.w && (ex.invert ? pr.kg<prev.kg : pr.kg>prev.kg)) || (!ex.w && pr.reps>prev.reps))
@@ -1024,11 +1046,11 @@ function renderActiveSession(){
     const vulReps = laatste ? laatste.reps : (prev ? prev.reps : '');
 
     const kgField = ex.w
-      ? '<input class="input-field" id="in-kg-'+i+'" type="number" inputmode="decimal" step="0.5" min="0" max="500" placeholder="kg" style="width:78px;flex:none" value="'+(vulKg||'')+'">'
+      ? '<input class="input-field" id="in-kg-'+i+'" type="number" inputmode="decimal" step="'+(ex.cardio?'1':'0.5')+'" min="0" max="500" placeholder="'+(ex.cardio?'level':'kg')+'" style="width:78px;flex:none" value="'+(vulKg||'')+'">'
       : '';
     const pills = mine.map(o=>{
       const beat = beatsPrev(o.s, prev, ex.w, ex.invert);
-      const txt  = ex.w ? o.s.kg+'×'+o.s.reps : o.s.reps;
+      const txt  = ex.cardio ? o.s.kg+'·'+o.s.reps+'min' : (ex.w ? o.s.kg+'×'+o.s.reps : o.s.reps);
       return '<span class="set-pill'+(beat?' beat':'')+'">'+(beat?'▲ ':'')+txt+
         '<button class="del-btn" style="font-size:12px;padding:0 0 0 2px;line-height:1" onclick="removeSet('+o.idx+')">×</button></span>';
     }).join('');
@@ -1041,7 +1063,7 @@ function renderActiveSession(){
         (isExtra?' <button class="del-btn" style="font-size:12px" onclick="removeExtra('+(i-vaste)+')">×</button>':'')+'</span></div>'+
       prevLine+
       '<div class="set-inputs">'+kgField+
-        '<input class="input-field" id="in-reps-'+i+'" type="number" inputmode="numeric" min="1" max="500" placeholder="reps" style="width:78px;flex:none" value="'+(vulReps||'')+'">'+
+        '<input class="input-field" id="in-reps-'+i+'" type="number" inputmode="numeric" min="1" max="500" placeholder="'+(ex.cardio?'min':'reps')+'" style="width:78px;flex:none" value="'+(vulReps||'')+'">'+
         '<button class="btn-set" onclick="logSet('+i+')">+ set</button>'+
         '<span style="flex:1;text-align:right;font-size:11px;color:var(--text3)">'+mine.length+'/'+ex.sets+'</span>'+
       '</div>'+
@@ -1060,6 +1082,11 @@ function renderActiveSession(){
         '<div style="font-size:11px;color:var(--text2);margin-top:2px">'+nSets+' sets · '+
           Math.round(vol).toLocaleString('nl-BE')+' kg volume · '+mins+' min</div></div>'+
         '<span class="badge badge-orange">bezig</span></div>'+
+      '<div class="sess-datum">'+
+        '<span>Datum</span>'+
+        '<input type="date" id="sess-date" value="'+(state.draft.date||isoVandaag())+'" max="'+isoVandaag()+'" onchange="setSessionDate(this.value)">'+
+        (state.draft.date && state.draft.date!==isoVandaag() ? '<span class="badge badge-orange">achteraf</span>' : '')+
+      '</div>'+
       (w.hint?'<div class="note-box" style="margin:10px 0 2px">'+esc(w.hint)+'</div>':'')+
       '<div style="margin-top:8px">'+rows+'</div>'+
       '<div class="add-ex">'+
@@ -1103,7 +1130,7 @@ function addExercise(){
   // bestaande definitie hergebruiken, zodat invert en doelen behouden blijven
   const bestaand = exDef(naam);
   const ex = bestaand
-    ? {name:bestaand.name, sets:bestaand.sets, reps:bestaand.reps, w:bestaand.w, invert:bestaand.invert}
+    ? {name:bestaand.name, sets:bestaand.sets, reps:bestaand.reps, w:bestaand.w, invert:bestaand.invert, cardio:bestaand.cardio}
     : {name:naam, sets:3, reps:'8–12', w:weighted};
 
   if(!state.draft.extra) state.draft.extra = [];
@@ -1144,7 +1171,7 @@ function logSet(i){
   const prev = lastFor(ex.name);
   // inv wordt meegeschreven zodat oude sets zichzelf blijven verklaren,
   // ook als de oefening later uit het schema verdwijnt
-  const set  = {ex:ex.name, kg:kg, reps:reps, w:!!ex.w, inv:!!ex.invert, ts:Date.now()};
+  const set  = {ex:ex.name, kg:kg, reps:reps, w:!!ex.w, inv:!!ex.invert, c:!!ex.cardio, ts:Date.now()};
   state.draft.sets.push(set);
   save();
   renderActiveSession();
@@ -1158,6 +1185,13 @@ function removeSet(idx){
   renderActiveSession();
 }
 
+function setSessionDate(iso){
+  if(!state.draft) return;
+  state.draft.date = iso || isoVandaag();
+  save();
+  renderActiveSession();
+}
+
 function finishSession(){
   const d = state.draft;
   if(!d) return;
@@ -1165,11 +1199,17 @@ function finishSession(){
     if(!confirm('Geen sets gelogd. Sessie toch als gedaan afronden?')) return;
   }
   const w = WO[d.wid];
-  state.sessions.unshift({
-    ts:d.started, date:todayStr(), week:getCurrentWeekKey(),
+  // een achteraf ingevulde sessie telt mee in de week waarin hij plaatsvond
+  const achteraf = d.date && d.date!==isoVandaag();
+  const datum = achteraf ? isoNaarDatum(d.date) : todayStr();
+  const ts    = achteraf ? isoNaarTs(d.date)    : d.started;
+  state.sessions.push({
+    ts:ts, date:datum, week:getCurrentWeekKey(new Date(ts)),
     wid:d.wid, name:w.name, loc:w.loc, sets:d.sets,
-    mins: Math.max(1, Math.round((Date.now()-d.started)/60000))
+    mins: achteraf ? null : Math.max(1, Math.round((Date.now()-d.started)/60000))
   });
+  // nieuwste eerst houden, ook na het invullen van een oudere sessie
+  state.sessions.sort((a,b)=>b.ts-a.ts);
   if(state.sessions.length>500) state.sessions.pop();
   const vol = sessionVolume(d);
   state.draft = null;
@@ -1201,11 +1241,17 @@ function logRow(){
   const el = document.getElementById('inp-row-km');
   const v  = parseFloat(el.value);
   if(!v || v<0.1 || v>30) return;
-  state.rowLog.unshift({km:v, date:todayStr(), week:getCurrentWeekKey()});
+  const dEl = document.getElementById('inp-row-date');
+  const iso = (dEl && dEl.value) || isoVandaag();
+  const ts  = isoNaarTs(iso);
+  state.rowLog.unshift({km:v, date:isoNaarDatum(iso), week:getCurrentWeekKey(new Date(ts)), ts:ts});
+  state.rowLog.sort((a,b)=>(b.ts||0)-(a.ts||0));
   if(state.rowLog.length>300) state.rowLog.pop();
   save();
   el.value='';
+  if(dEl) dEl.value = isoVandaag();
   renderRowSection();
+  renderHistRoeier();
   updateHome();
   showToast(v.toFixed(1)+' km geroeid!');
 }
@@ -1221,6 +1267,8 @@ function saveRowEdit(i){
 }
 
 function renderRowSection(){
+  const dEl = document.getElementById('inp-row-date');
+  if(dEl && !dEl.value) dEl.value = isoVandaag();
   const week  = getCurrentWeekKey();
   const goal  = state.goals.rowKm || 12;
   const total = getWeekRowKm(week);
@@ -1584,9 +1632,11 @@ function exportCSV(){
     (s.sets||[]).forEach(x=>{
       perEx[x.ex] = (perEx[x.ex]||0)+1;
       const assist = setIsInvert(x);
-      rijen.push([s.date, s.week, 'set', s.name, s.loc, x.ex, perEx[x.ex],
+      const cardio = setIsCardio(x);
+      // bij cardio staat het level in de kg-kolom en de duur in reps
+      rijen.push([s.date, s.week, cardio?'cardio':'set', s.name, s.loc, x.ex, perEx[x.ex],
                   x.w ? x.kg : '', x.reps,
-                  (assist || !x.w) ? '' : (x.kg||0)*x.reps,
+                  (assist || cardio || !x.w) ? '' : (x.kg||0)*x.reps,
                   assist ? 'ja' : 'nee', '']);
     });
   });
@@ -1615,7 +1665,8 @@ function doImport(event){
     try{
       const imp = JSON.parse(e.target.result);
       if(imp.trainDone===undefined && imp.sessions===undefined){ showToast('Ongeldig backup bestand'); return; }
-      if(!confirm('Je huidige data wordt vervangen door de backup. Doorgaan?')) return;
+      const onderdelen = Object.keys(imp).length;
+      if(!confirm('De onderdelen die in dit bestand zitten ('+onderdelen+') overschrijven je huidige data. Wat er niet in staat, blijft staan. Doorgaan?')) return;
       Object.assign(state, imp);
       if(!state.sessions) state.sessions = [];
       if(!state.goals)    state.goals = {gym:3, thuis:2, eiwit:165, rowKm:state.rowGoal||12};
@@ -1698,7 +1749,7 @@ function renderHistKracht(){
   state.sessions.forEach(s=>{
     const seen = {};
     (s.sets||[]).forEach(x=>{
-      if(!byEx[x.ex]) byEx[x.ex] = {w:!!x.w, inv:isInvert(x.ex), entries:[], allSets:0};
+      if(!byEx[x.ex]) byEx[x.ex] = {w:!!x.w, inv:setIsInvert(x), cardio:setIsCardio(x), entries:[], allSets:0};
       byEx[x.ex].allSets++;
       const cur = seen[x.ex], kg = x.kg||0, inv = byEx[x.ex].inv;
       const beter = !cur || (inv ? (kg<(cur.kg||0) || (kg===(cur.kg||0) && x.reps>cur.reps))
@@ -1719,13 +1770,13 @@ function renderHistKracht(){
     const en = d.entries;                       // nieuwste eerst
     const pr = bestFor(ex);
     const chron = en.slice(0,12).reverse();     // oud → nieuw
-    const vals  = chron.map(e=>d.w ? e.kg : e.reps);
+    const vals  = chron.map(e=>(d.w && !d.cardio) ? e.kg : e.reps);
     const mx    = Math.max.apply(null, vals);
     const mn    = Math.min.apply(null, vals);
     // nulpunt net onder het laagste resultaat: zo zie je de progressie echt
     const base  = mx===mn ? 0 : Math.max(0, mn - (mx-mn)*0.45);
     const bars  = chron.map((e,i)=>{
-      const v = d.w ? e.kg : e.reps;
+      const v = (d.w && !d.cardio) ? e.kg : e.reps;
       const h = mx===base ? 20 : Math.max(5, Math.round(8 + (v-base)/(mx-base)*28));
       return '<div style="flex:1;max-width:30px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px">'+
         '<span style="font-size:8px;color:var(--text3);font-family:\'DM Mono\',monospace">'+v+'</span>'+
@@ -1735,23 +1786,23 @@ function renderHistKracht(){
     const first = chron[0], last = chron[chron.length-1];
     let trend = '';
     if(first && last && chron.length>1){
-      const dv = (d.w?last.kg:last.reps) - (d.w?first.kg:first.reps);
+      const m = e=>(d.w && !d.cardio) ? e.kg : e.reps; const dv = m(last) - m(first);
       const vooruit = d.inv ? dv<0 : dv>0;   // assist-machine: minder hulp = vooruitgang
       if(dv!==0) trend = '<span style="font-size:11px;color:'+(vooruit?'var(--accent)':'var(--red)')+'">'+
-        (dv>0?'▲ +':'▼ ')+Math.abs(dv)+(d.w?' kg':' reps')+'</span>';
+        (dv>0?'▲ +':'▼ ')+Math.abs(dv)+(d.cardio ? ' min' : (d.w?' kg':' reps'))+'</span>';
     }
     const recent = en.slice(0,6).map(e=>
       '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)">'+
       '<span style="font-size:11px;color:var(--text3)">'+e.date+'</span>'+
       '<span style="font-size:13px;font-weight:600;font-family:\'DM Mono\',monospace;color:var(--accent)">'+
-        (d.w ? e.kg+' kg × '+e.reps : e.reps+' reps')+'</span></div>').join('');
+        (d.cardio ? 'level '+e.kg+' · '+e.reps+' min' : (d.w ? e.kg+' kg × '+e.reps : e.reps+' reps'))+'</span></div>').join('');
 
     return '<div class="card">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:10px">'+
         '<div style="min-width:0"><div style="font-size:14px;font-weight:600">'+esc(ex)+'</div>'+
         '<div style="font-size:11px;color:var(--text2);margin-top:2px">'+en.length+(en.length===1?' sessie':' sessies')+' · '+d.allSets+(d.allSets===1?' set ':' sets ')+trend+'</div></div>'+
         '<div style="text-align:right;flex-shrink:0"><div style="font-size:17px;font-weight:700;font-family:\'DM Mono\',monospace;color:var(--accent)">'+
-          (d.w ? pr.kg+' kg' : pr.reps)+'</div><div style="font-size:10px;color:var(--text2)">🏆 '+(d.w?'× '+pr.reps:'reps')+'</div></div></div>'+
+          (d.cardio ? pr.reps+' min' : (d.w ? pr.kg+' kg' : pr.reps))+'</div><div style="font-size:10px;color:var(--text2)">🏆 '+(d.cardio ? 'level '+pr.kg : (d.w?'× '+pr.reps:'reps'))+'</div></div></div>'+
       (chron.length>=3 ? '<div class="mini-bars" style="margin-bottom:10px">'+bars+'</div>' : '')+recent+'</div>';
   }).join('');
 
